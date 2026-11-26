@@ -179,6 +179,10 @@
         page-break-after: always;
         break-after: page;
       }
+      .print-avoid-break {
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
       .sketch-box, .sketch-box-sm {
         box-shadow: none !important;
         border: 1.5px solid #333 !important;
@@ -239,7 +243,7 @@
   <!-- 主頁面容器 -->
   <div class="relative z-10 max-w-[1520px] mx-auto px-3 sm:px-6 pt-4 no-print">
 
-    <!-- 頂部可愛標題列與雲端狀態 -->
+    <!-- 頂部可愛標題列與雲端 / GitHub 多設備同步狀態 -->
     <header class="sketch-box bg-gradient-to-r from-[#FFE8EE] via-[#FFF8DC] to-[#E3F4FF] p-4 sm:p-5 mb-5 flex flex-col lg:flex-row items-center justify-between gap-4">
       <div class="flex items-center gap-3 sm:gap-4">
         <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-[#FFD97D] border-2 border-[#3B332B] flex items-center justify-center shadow-[3px_3px_0_#3B332B] shrink-0 rotate-[-3deg]">
@@ -253,14 +257,14 @@
         <div>
           <div class="flex flex-wrap items-center gap-2">
             <h1 class="text-2xl sm:text-3xl font-black tracking-wide text-[#3B332B]">
-              CHY旅遊行程規劃
+              旅手帳 ✿ 旅遊行程規劃與預算計算機
             </h1>
             <span class="px-2.5 py-0.5 text-xs font-bold bg-[#FF9EAA] text-[#3B332B] border-2 border-[#3B332B] rounded-full">
-              update as at 26.11.2026
+              日系手繪版
             </span>
           </div>
           <p class="text-xs sm:text-sm text-[#5C5046] mt-1 font-medium">
-            日系手繪版
+            拖拉排程・多幣別即時換算・Google Maps 地鐵路線・GitHub + Firebase 多設備即時同步・雙模式 PDF 列印
           </p>
         </div>
       </div>
@@ -269,8 +273,13 @@
       <div class="flex flex-wrap items-center justify-center gap-2">
         <div id="sync-status-badge" class="px-3 py-1.5 rounded-full text-xs font-bold bg-[#E5F6E9] border-2 border-[#3B332B] flex items-center gap-1.5">
           <span class="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></span>
-          <span id="sync-status-text">Firebase + IndexedDB 就緒</span>
+          <span id="sync-status-text">Firebase + GitHub 多設備同步就緒</span>
         </div>
+
+        <button onclick="openGithubSyncModal()" class="sketch-btn bg-[#24292F] hover:bg-[#32383F] text-white px-3.5 py-2 text-sm flex items-center gap-1.5" title="設定 GitHub Gist 多設備即時雲端同步">
+          <i class="fa-brands fa-github"></i> GitHub 同步
+          <span id="github-sync-dot" class="w-2 h-2 rounded-full bg-gray-400"></span>
+        </button>
 
         <button onclick="createNewTrip()" class="sketch-btn bg-[#FFF4CC] hover:bg-[#FFE999] px-3.5 py-2 text-sm flex items-center gap-1.5">
           <i class="fa-solid fa-file-circle-plus text-amber-600"></i> 開新記錄
@@ -295,7 +304,7 @@
       <div class="flex flex-wrap items-center justify-between gap-2 mb-4 pb-2 border-b-2 border-dashed border-[#E0D5C5]">
         <h2 class="text-lg sm:text-xl font-black flex items-center gap-2">
           <span class="w-8 h-8 rounded-xl bg-[#FFD97D] border-2 border-[#3B332B] flex items-center justify-center text-sm">1</span>
-          行程基本資料
+          行程基本資料・時間軸設定・多幣別預算總覽
         </h2>
         <div class="text-xs font-bold text-[#6E6054] bg-[#FFF6DC] px-3 py-1 rounded-full border border-[#3B332B]">
           <i class="fa-solid fa-coins text-amber-500 mr-1"></i>基準結算貨幣：港幣 (HKD)
@@ -418,18 +427,18 @@
       </div>
     </section>
 
-    <!-- 主工作區：左側「卡片生成庫 & Excel 匯入 & 額外支出」 + 右側「固定時間表」 -->
+    <!-- 主工作區：左側「卡片生成庫 & Excel 匯入 & 額外支出」（隨捲動跟隨） + 右側「固定展開式即時更新時間表（無內部下拉滾筒）」 -->
     <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start mb-8">
 
       <!-- 左側欄 (5 欄)：功能 2 卡片庫 + 特別 PASS + Excel + 功能 4 額外支出 -->
-      <div class="xl:col-span-5 flex flex-col gap-5">
+      <div class="xl:col-span-5 flex flex-col gap-5 xl:sticky xl:top-4">
 
         <!-- 功能 2：Excel 匯入匯出 & 新增行程方格 -->
         <section class="sketch-box washi-tape-blue p-4 sm:p-5 bg-white">
           <div class="flex flex-wrap items-center justify-between gap-2 mb-3 pb-2 border-b-2 border-dashed border-[#E0D5C5]">
             <h2 class="text-lg font-black flex items-center gap-2">
               <span class="w-7 h-7 rounded-xl bg-[#7CC6FE] border-2 border-[#3B332B] flex items-center justify-center text-sm">2</span>
-              行程記錄/ Excel 匯入
+              行程方格倉庫 & Excel 匯入
             </h2>
 
             <!-- Excel DEMO 下載與上傳 -->
@@ -539,7 +548,7 @@
           </div>
 
           <!-- 待排程方格列表容器 -->
-          <div id="card-pool-list" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[430px] overflow-y-auto pr-1 pt-1">
+          <div id="card-pool-list" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[380px] overflow-y-auto pr-1 pt-1">
             <!-- 動態渲染方格卡片 -->
           </div>
         </section>
@@ -567,14 +576,14 @@
             </button>
           </form>
 
-          <div id="extra-expenses-list" class="space-y-1.5 max-h-40 overflow-y-auto">
+          <div id="extra-expenses-list" class="space-y-1.5 max-h-36 overflow-y-auto">
             <!-- 動態列出額外支出 -->
           </div>
         </section>
       </div>
 
-      <!-- 右側欄 (7 欄)：固定於工作區的互動式時間表 (功能 1, 2, 3, 4) -->
-      <section class="xl:col-span-7 sketch-box washi-tape-green p-4 sm:p-5 bg-white xl:sticky xl:top-4">
+      <!-- 右側欄 (7 欄)：固定完全展開式即時更新時間表（移除內部下拉滾筒，所有時段直接完整攤開呈現） -->
+      <section class="xl:col-span-7 sketch-box washi-tape-green p-4 sm:p-5 bg-white">
         <!-- 時間表頂部控制列：Day 分頁、檢視模式切換、一鍵整合鍵 -->
         <div class="flex flex-wrap items-center justify-between gap-2 mb-3 pb-3 border-b-2 border-dashed border-[#E0D5C5]">
           <div class="flex flex-wrap items-center gap-1.5" id="day-selector-tabs">
@@ -582,6 +591,10 @@
           </div>
 
           <div class="flex items-center gap-2">
+            <span class="hidden sm:inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[#E5F6E9] border border-[#3B332B] text-[11px] font-bold text-[#155E2B]">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>即時同步展開
+            </span>
+
             <!-- 一鍵整合當日重複方格按鈕 -->
             <button id="merge-day-btn" onclick="mergeCurrentDayDuplicates()" class="sketch-btn bg-[#FFD97D] hover:bg-[#FFC94D] px-3 py-1.5 text-xs flex items-center gap-1.5" title="將當日連續或重複的相同內容方格合併">
               <i class="fa-solid fa-object-group"></i> 一鍵整合重覆方格
@@ -598,9 +611,9 @@
           <!-- 動態顯示當日日期、預計花費、實際花費、剪貼簿狀態 -->
         </div>
 
-        <!-- 時間表主體區域 (單日時間軸 或 整個時段多日對照表) -->
-        <div id="schedule-container" class="max-h-[680px] overflow-y-auto pr-1 space-y-2">
-          <!-- 動態渲染時間格 -->
+        <!-- 時間表主體區域：固定完全展開，取代原有 max-h 下拉滾筒式 -->
+        <div id="schedule-container" class="space-y-2">
+          <!-- 動態渲染完整時間格 -->
         </div>
       </section>
     </div>
@@ -640,7 +653,7 @@
       <h3 class="text-lg font-black mb-1 flex items-center gap-2">
         <i class="fa-solid fa-pen-to-square text-amber-500"></i> 編輯行程內容與實際支出
       </h3>
-      <p class="text-xs text-gray-500 mb-3">修改名稱、價格或地址時，將會同步更新至左側卡片庫！</p>
+      <p class="text-xs text-gray-500 mb-3">修改名稱、價格或地址時，將會同步更新至左側卡片庫與雲端！</p>
 
       <form onsubmit="saveSlotEdit(event)" class="space-y-3">
         <input type="hidden" id="edit-slot-day" />
@@ -679,7 +692,7 @@
         </div>
 
         <div>
-          <label class="block text-xs font-bold mb-1">地址 / 車站名稱 (用於 Google Maps 路線規劃)</label>
+          <label class="block text-xs font-bold mb-1">地址 / 車站名稱 (用於 Google Maps 路線規劃與列印地點)</label>
           <input id="edit-slot-address" type="text" class="sketch-input w-full text-xs" />
         </div>
 
@@ -772,7 +785,7 @@
       <h3 class="text-xl font-black mb-1 flex items-center gap-2">
         <i class="fa-solid fa-clock-rotate-left text-sky-500"></i> 已儲存的旅遊行程記錄
       </h3>
-      <p class="text-xs text-gray-500 mb-4">資料同步儲存於 IndexedDB 與 Firebase Realtime Database，可隨時翻閱載入或開新記錄。</p>
+      <p class="text-xs text-gray-500 mb-4">資料同步儲存於 IndexedDB、Firebase Realtime Database 與 GitHub 多設備雲端，可隨時翻閱載入或開新記錄。</p>
 
       <div id="history-list-container" class="space-y-2.5 max-h-96 overflow-y-auto pr-1">
         <!-- 動態列出歷史行程 -->
@@ -780,9 +793,9 @@
     </div>
   </div>
 
-  <!-- 5. 輸出 PDF / 列印模式選擇視窗 (功能 5) -->
+  <!-- 5. 輸出 PDF / 列印模式選擇視窗 (功能 5：支援模式 B 單頁或多頁切換，預設為 1 頁) -->
   <div id="print-modal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4 no-print">
-    <div class="sketch-box bg-white max-w-lg w-full p-5 relative">
+    <div class="sketch-box bg-white max-w-xl w-full p-5 relative">
       <button onclick="closeModal('print-modal')" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-rose-100 border-2 border-[#3B332B] font-black">✕</button>
       <h3 class="text-xl font-black mb-2 flex items-center gap-2">
         <i class="fa-solid fa-file-pdf text-rose-500"></i> 輸出 PDF / 行程表列印
@@ -790,21 +803,94 @@
       <p class="text-xs text-gray-600 mb-4">請選擇您需要的列印排版格式（在瀏覽器列印視窗中選擇「另存為 PDF」即可匯出 PDF 檔案）：</p>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <button onclick="executePrint('daily-landscape')" class="sketch-box-sm bg-[#E3F3FF] hover:bg-[#CDE9FF] p-4 text-left transition">
-          <div class="text-2xl mb-1">🗓️</div>
-          <div class="font-black text-sm text-[#084C7F]">模式 A：獨立每一天 (橫向)</div>
-          <p class="text-[11px] text-gray-600 mt-1">
-            每一天獨立成一頁橫向 A4 表格，完整列出時段、交通、住宿、景點與當日花費明細。
-          </p>
-        </button>
+        <!-- 模式 A -->
+        <div class="sketch-box-sm bg-[#E3F3FF] p-4 flex flex-col justify-between">
+          <div>
+            <div class="text-2xl mb-1">🗓️</div>
+            <div class="font-black text-sm text-[#084C7F]">模式 A：獨立每一天 (橫向)</div>
+            <p class="text-[11px] text-gray-600 mt-1 mb-3">
+              每一天獨立成一頁橫向 A4 表格，完整列出時段、交通、住宿、景點與當日花費明細。
+            </p>
+          </div>
+          <button onclick="executePrint('daily-landscape')" class="sketch-btn bg-[#7CC6FE] hover:bg-[#5BB7FD] w-full py-2 text-xs text-[#084C7F]">
+            <i class="fa-solid fa-print mr-1"></i>列印模式 A (每日一頁橫向)
+          </button>
+        </div>
 
-        <button onclick="executePrint('summary-onepage')" class="sketch-box-sm bg-[#FFE6EA] hover:bg-[#FFD1D9] p-4 text-left transition">
-          <div class="text-2xl mb-1">📄</div>
-          <div class="font-black text-sm text-[#8A1538]">模式 B：單頁全行程總覽 (含時間與地點)</div>
-          <p class="text-[11px] text-gray-600 mt-1">
-            將整個行程濃縮於單一頁面，清晰列出每日的「住宿」以及實際行程的「時間、名稱與地點/地址」。
-          </p>
+        <!-- 模式 B（含 1頁 / 多頁 選擇，預設為 1 頁） -->
+        <div class="sketch-box-sm bg-[#FFE6EA] p-4 flex flex-col justify-between">
+          <div>
+            <div class="text-2xl mb-1">📄</div>
+            <div class="font-black text-sm text-[#8A1538]">模式 B：全行程總覽 (含時間與地點)</div>
+            <p class="text-[11px] text-gray-600 mt-1 mb-2">
+              清晰列出每日的「住宿」以及實際行程的「起訖時間、項目名稱與地點/地址」。
+            </p>
+            <div class="bg-white/90 border border-[#3B332B] rounded-xl p-2 mb-3">
+              <label class="block text-[11px] font-black text-[#8A1538] mb-1">
+                <i class="fa-solid fa-copy mr-1"></i>模式 B 頁數排版設定：
+              </label>
+              <select id="print-mode-b-pages" class="sketch-input w-full text-xs font-bold py-1">
+                <option value="1" selected>濃縮為 1 頁列印 (預設・單頁 A4 總覽)</option>
+                <option value="multi">自動展開成多頁列印 (大字體舒適閱讀)</option>
+              </select>
+            </div>
+          </div>
+          <button onclick="executePrint('summary-onepage')" class="sketch-btn bg-[#FF9EAA] hover:bg-[#FF8594] w-full py-2 text-xs text-[#8A1538]">
+            <i class="fa-solid fa-print mr-1"></i>列印模式 B (時間+地點)
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. GitHub 多設備雲端同步設定視窗 -->
+  <div id="github-sync-modal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4 no-print">
+    <div class="sketch-box bg-white max-w-lg w-full p-5 relative">
+      <button onclick="closeModal('github-sync-modal')" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-rose-100 border-2 border-[#3B332B] font-black">✕</button>
+      <h3 class="text-xl font-black mb-1 flex items-center gap-2">
+        <i class="fa-brands fa-github text-2xl"></i> GitHub 多設備即時雲端同步
+      </h3>
+      <p class="text-xs text-gray-600 mb-3">
+        透過 GitHub Gist API，在電腦、平板、手機等多部裝置輸入相同的 <strong>GitHub Token</strong>（或共用 Gist ID），即可即時雙向同步所有行程與計算資料！
+      </p>
+
+      <div class="space-y-3 bg-[#F6F8FA] p-3.5 rounded-2xl border-2 border-[#3B332B]">
+        <div>
+          <label class="block text-xs font-bold mb-1">1. GitHub Personal Access Token (需勾選 <code class="bg-gray-200 px-1 rounded">gist</code> 權限)</label>
+          <input id="gh-token-input" type="password" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" class="sketch-input w-full text-xs font-mono" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold mb-1">2. 雲端同步 Gist ID（首次留空會自動建立，其他設備填入同一組 ID 即可連線）</label>
+          <div class="flex gap-1.5">
+            <input id="gh-gist-id-input" type="text" placeholder="留空自動建立，或貼上現有 Gist ID" class="sketch-input flex-1 text-xs font-mono" />
+            <button type="button" onclick="copyGistId()" class="sketch-btn bg-white px-2.5 py-1 text-xs" title="複製 Gist ID 傳給其他設備">
+              <i class="fa-solid fa-copy"></i> 複製ID
+            </button>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between pt-1">
+          <label class="flex items-center gap-2 text-xs font-bold cursor-pointer">
+            <input id="gh-auto-sync-checkbox" type="checkbox" checked class="w-4 h-4 accent-emerald-600" />
+            每次修改行程時自動即時上傳至 GitHub
+          </label>
+          <span id="gh-last-sync-label" class="text-[10px] text-gray-500">尚未連線</span>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-between gap-2 mt-4">
+        <button type="button" onclick="disconnectGithubSync()" class="sketch-btn bg-gray-100 text-rose-700 px-3 py-1.5 text-xs">
+          解除連線
         </button>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="pullFromGithubNow()" class="sketch-btn bg-[#7CC6FE] hover:bg-[#5BB7FD] px-3.5 py-1.5 text-xs">
+            <i class="fa-solid fa-cloud-arrow-down mr-1"></i>立即從 GitHub 拉取
+          </button>
+          <button type="button" onclick="saveAndPushGithubNow()" class="sketch-btn bg-[#88C999] hover:bg-[#73BA86] px-4 py-1.5 text-xs">
+            <i class="fa-solid fa-cloud-arrow-up mr-1"></i>儲存設定並立即同步
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -812,11 +898,11 @@
   <!-- 專供列印與匯出 PDF 渲染的隱藏容器 -->
   <div id="print-area" class="hidden"></div>
 
-  <!-- ================= Firebase SDK & 應用程式核心邏輯 ================= -->
+  <!-- ================= Firebase SDK & GitHub 多設備同步 & 應用程式核心邏輯 ================= -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js";
-    import { getDatabase, ref, set, get, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+    import { getDatabase, ref, set, get, remove, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
     // 使用者指定的 Firebase 設定
     const firebaseConfig = {
@@ -834,7 +920,7 @@
     try { getAnalytics(app); } catch (e) { /* 忽略本地環境分析限制 */ }
     const db = getDatabase(app);
 
-    // ==================== IndexedDB 封裝層 (完全取代 localStorage) ====================
+    // ==================== IndexedDB 封裝層 ====================
     const IDB_NAME = 'KawaiiTravelPlannerDB';
     const IDB_VERSION = 1;
     const STORE_NAME = 'kv_store';
@@ -883,16 +969,285 @@
       });
     }
 
-    // ==================== 雙重儲存 API (IndexedDB + Firebase Realtime Database) ====================
+    // ==================== GitHub Gist 多設備即時雲端同步模組 ====================
+    const GITHUB_GIST_FILENAME = 'kawaii_travel_planner_sync.json';
+    let githubConfig = {
+      token: '',
+      gistId: '',
+      autoSync: true,
+      lastSyncAt: ''
+    };
+    let githubPushTimer = null;
+    let githubPollInterval = null;
+    let isApplyingRemoteUpdate = false;
+
+    async function loadGithubConfig() {
+      const saved = await idbGet('github_sync_config');
+      if (saved) {
+        githubConfig = { ...githubConfig, ...saved };
+      }
+      updateGithubStatusUI();
+    }
+
+    function updateGithubStatusUI() {
+      const dot = document.getElementById('github-sync-dot');
+      const label = document.getElementById('gh-last-sync-label');
+      if (dot) {
+        if (githubConfig.token) {
+          dot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
+        } else {
+          dot.className = 'w-2 h-2 rounded-full bg-gray-400';
+        }
+      }
+      if (label) {
+        label.textContent = githubConfig.token
+          ? (githubConfig.lastSyncAt ? `上次同步：${githubConfig.lastSyncAt}` : '已設定 Token，待同步')
+          : '尚未連線';
+      }
+    }
+
+    async function pushStateToGithub(silent = true) {
+      if (!githubConfig.token || isApplyingRemoteUpdate) return false;
+      try {
+        const payloadObj = {
+          updatedAt: Date.now(),
+          deviceAgent: navigator.userAgent.slice(0, 60),
+          activeTripId: appState.tripId,
+          activeTrip: appState
+        };
+        const contentStr = JSON.stringify(payloadObj, null, 2);
+
+        const headers = {
+          'Authorization': `token ${githubConfig.token}`,
+          'Accept': 'application/vnd.github+json',
+          'Content-Type': 'application/json'
+        };
+
+        let res;
+        if (githubConfig.gistId) {
+          res = await fetch(`https://api.github.com/gists/${githubConfig.gistId}`, {
+            method: 'PATCH',
+            headers,
+            body: JSON.stringify({
+              description: '旅手帳 ✿ 多設備即時旅遊行程同步資料',
+              files: { [GITHUB_GIST_FILENAME]: { content: contentStr } }
+            })
+          });
+        } else {
+          res = await fetch('https://api.github.com/gists', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+              description: '旅手帳 ✿ 多設備即時旅遊行程同步資料',
+              public: false,
+              files: { [GITHUB_GIST_FILENAME]: { content: contentStr } }
+            })
+          });
+        }
+
+        if (!res.ok) throw new Error(`GitHub API HTTP ${res.status}`);
+        const data = await res.json();
+        if (data && data.id) {
+          githubConfig.gistId = data.id;
+          githubConfig.lastSyncAt = new Date().toLocaleTimeString('zh-HK');
+          await idbSet('github_sync_config', githubConfig);
+          const gistInput = document.getElementById('gh-gist-id-input');
+          if (gistInput) gistInput.value = data.id;
+          updateGithubStatusUI();
+          updateSyncBadge('Firebase + GitHub 多設備已同步');
+          if (!silent) showToast(`已成功同步至 GitHub Gist (${data.id.slice(0, 8)}...)！`, 'success');
+          return true;
+        }
+      } catch (err) {
+        console.warn('GitHub Gist 上傳失敗:', err);
+        if (!silent) showToast('GitHub 同步失敗，請檢查 Token 是否有效及是否勾選 gist 權限。', 'error');
+      }
+      return false;
+    }
+
+    async function pullStateFromGithub(silent = true) {
+      if (!githubConfig.token) return false;
+      try {
+        const headers = {
+          'Authorization': `token ${githubConfig.token}`,
+          'Accept': 'application/vnd.github+json'
+        };
+
+        // 若尚未填入 Gist ID，自動搜尋該帳號下既有的旅手帳 Gist
+        if (!githubConfig.gistId) {
+          const listRes = await fetch('https://api.github.com/gists?per_page=30', { headers });
+          if (listRes.ok) {
+            const gists = await listRes.json();
+            const found = gists.find(g => g.files && g.files[GITHUB_GIST_FILENAME]);
+            if (found) {
+              githubConfig.gistId = found.id;
+              await idbSet('github_sync_config', githubConfig);
+            }
+          }
+        }
+
+        if (!githubConfig.gistId) {
+          if (!silent) showToast('雲端尚未有行程檔，將為您建立新的 GitHub 同步空間！', 'info');
+          return false;
+        }
+
+        const res = await fetch(`https://api.github.com/gists/${githubConfig.gistId}`, { headers, cache: 'no-store' });
+        if (!res.ok) throw new Error(`GitHub API HTTP ${res.status}`);
+        const data = await res.json();
+        const fileObj = data.files && data.files[GITHUB_GIST_FILENAME];
+        if (fileObj && fileObj.content) {
+          const parsed = JSON.parse(fileObj.content);
+          if (parsed && parsed.activeTrip && parsed.updatedAt) {
+            const remoteUpdated = Number(parsed.updatedAt) || 0;
+            const localUpdated = Number(appState._lastModified) || 0;
+            if (!silent || remoteUpdated > localUpdated) {
+              isApplyingRemoteUpdate = true;
+              appState = {
+                ...appState,
+                ...parsed.activeTrip,
+                cards: parsed.activeTrip.cards || [],
+                schedule: parsed.activeTrip.schedule || { 1: {} },
+                extraExpenses: parsed.activeTrip.extraExpenses || [],
+                passes: parsed.activeTrip.passes || appState.passes,
+                _lastModified: remoteUpdated
+              };
+              await idbSet('current_active_trip', appState);
+              renderAll();
+              isApplyingRemoteUpdate = false;
+              githubConfig.lastSyncAt = new Date().toLocaleTimeString('zh-HK');
+              await idbSet('github_sync_config', githubConfig);
+              updateGithubStatusUI();
+              updateSyncBadge('已從 GitHub 多設備同步最新行程');
+              if (!silent) showToast('已從 GitHub 載入最新多設備行程！', 'success');
+              return true;
+            }
+          }
+        }
+      } catch (err) {
+        isApplyingRemoteUpdate = false;
+        console.warn('GitHub Gist 拉取失敗:', err);
+        if (!silent) showToast('從 GitHub 拉取失敗，請確認 Token 與 Gist ID 是否正確。', 'error');
+      }
+      return false;
+    }
+
+    function scheduleGithubAutoSync() {
+      if (!githubConfig.token || !githubConfig.autoSync || isApplyingRemoteUpdate) return;
+      clearTimeout(githubPushTimer);
+      githubPushTimer = setTimeout(() => {
+        pushStateToGithub(true);
+      }, 1500);
+    }
+
+    function startGithubMultiDevicePolling() {
+      if (githubPollInterval) clearInterval(githubPollInterval);
+      githubPollInterval = setInterval(() => {
+        if (githubConfig.token && githubConfig.autoSync && document.visibilityState === 'visible') {
+          pullStateFromGithub(true);
+        }
+      }, 15000);
+    }
+
+    window.openGithubSyncModal = function () {
+      document.getElementById('gh-token-input').value = githubConfig.token || '';
+      document.getElementById('gh-gist-id-input').value = githubConfig.gistId || '';
+      document.getElementById('gh-auto-sync-checkbox').checked = githubConfig.autoSync !== false;
+      updateGithubStatusUI();
+      openModal('github-sync-modal');
+    };
+
+    window.copyGistId = function () {
+      const val = document.getElementById('gh-gist-id-input').value.trim();
+      if (!val) {
+        showToast('目前尚未產生 Gist ID，請先按「儲存設定並立即同步」！', 'warn');
+        return;
+      }
+      navigator.clipboard?.writeText(val);
+      showToast('已複製 Gist ID！可貼到手機或另一台電腦進行同步。', 'success');
+    };
+
+    window.saveAndPushGithubNow = async function () {
+      const token = document.getElementById('gh-token-input').value.trim();
+      const gistId = document.getElementById('gh-gist-id-input').value.trim();
+      const autoSync = document.getElementById('gh-auto-sync-checkbox').checked;
+      if (!token) {
+        showToast('請輸入 GitHub Personal Access Token！', 'warn');
+        return;
+      }
+      githubConfig = { ...githubConfig, token, gistId, autoSync };
+      await idbSet('github_sync_config', githubConfig);
+      updateGithubStatusUI();
+      startGithubMultiDevicePolling();
+      await pushStateToGithub(false);
+    };
+
+    window.pullFromGithubNow = async function () {
+      const token = document.getElementById('gh-token-input').value.trim();
+      const gistId = document.getElementById('gh-gist-id-input').value.trim();
+      if (!token) {
+        showToast('請先輸入 GitHub Personal Access Token！', 'warn');
+        return;
+      }
+      githubConfig.token = token;
+      githubConfig.gistId = gistId;
+      await idbSet('github_sync_config', githubConfig);
+      await pullStateFromGithub(false);
+    };
+
+    window.disconnectGithubSync = async function () {
+      githubConfig = { token: '', gistId: '', autoSync: true, lastSyncAt: '' };
+      await idbSet('github_sync_config', githubConfig);
+      document.getElementById('gh-token-input').value = '';
+      document.getElementById('gh-gist-id-input').value = '';
+      updateGithubStatusUI();
+      showToast('已解除 GitHub 多設備同步連線。', 'info');
+    };
+
+    // ==================== Firebase Realtime Database 雙向即時監聽與儲存 ====================
+    let firebaseListenerUnsub = null;
+
+    function attachFirebaseRealtimeListener(tripId) {
+      if (firebaseListenerUnsub) {
+        try { firebaseListenerUnsub(); } catch (e) {}
+      }
+      try {
+        const tripRef = ref(db, `trips/${tripId}`);
+        firebaseListenerUnsub = onValue(tripRef, async (snapshot) => {
+          if (!snapshot.exists() || isApplyingRemoteUpdate) return;
+          const remoteData = snapshot.val();
+          const remoteTs = Number(remoteData._lastModified) || 0;
+          const localTs = Number(appState._lastModified) || 0;
+          if (remoteTs > localTs) {
+            isApplyingRemoteUpdate = true;
+            appState = {
+              ...appState,
+              ...remoteData,
+              cards: remoteData.cards || [],
+              schedule: remoteData.schedule || { 1: {} },
+              extraExpenses: remoteData.extraExpenses || [],
+              passes: remoteData.passes || appState.passes,
+              _lastModified: remoteTs
+            };
+            await idbSet('current_active_trip', appState);
+            renderAll();
+            isApplyingRemoteUpdate = false;
+            updateSyncBadge('多設備即時同步已更新');
+          }
+        });
+      } catch (e) {
+        console.warn('Firebase 即時監聽啟動略過:', e);
+      }
+    }
+
     export async function saveData(path, data) {
       await idbSet(path, data);
       try {
         const cleanData = JSON.parse(JSON.stringify(data));
         await set(ref(db, path), cleanData);
-        updateSyncBadge('已同步雲端 & IndexedDB', true);
+        updateSyncBadge('Firebase + GitHub 多設備已同步');
       } catch (err) {
         console.warn('Firebase 同步警告 (已安全儲存於 IndexedDB):', err);
-        updateSyncBadge('已存於本地 IndexedDB', true);
+        updateSyncBadge('已存於本地 IndexedDB');
       }
     }
 
@@ -1055,7 +1410,8 @@
     const defaultEndDate = new Date(Date.now() + 3 * 86400000).toISOString().split('T')[0];
 
     let appState = {
-      tripId: 'trip_' + Date.now(),
+      tripId: 'trip_shared_main',
+      _lastModified: Date.now(),
       title: '東京富士山 5 日開心手繪之旅',
       startDate: todayStr,
       endDate: defaultEndDate,
@@ -1575,7 +1931,7 @@
             <div ondragover="handleDragOver(event)"
                  ondragleave="handleDragLeave(event)"
                  ondrop="handleDropOnSlot(event, ${dayNum}, '${timeStr}')"
-                 class="flex items-center gap-2 p-2 rounded-xl border-2 border-dashed border-[#D6CBB9] bg-[#FFFDF9] hover:bg-[#FFF9E6] transition min-h-[48px]">
+                 class="flex items-center gap-2 p-2 rounded-xl border-2 border-dashed border-[#D6CBB9] bg-[#FFFDF9] hover:bg-[#FFF9E6] transition min-h-[44px]">
               <div class="w-14 text-xs font-black text-[#6E6054] shrink-0 text-center">${timeStr}</div>
               <div class="flex-1 text-xs text-gray-400 flex items-center justify-between">
                 <span>拖拉左側行程方格至此，或點擊「貼上」</span>
@@ -2086,7 +2442,6 @@
       const slots = generateTimeSlots();
       if (!appState.schedule[dayNum]) appState.schedule[dayNum] = {};
 
-      // 優先尋找 09:00 之後的第一個空位
       const preferredStartIdx = Math.max(0, slots.findIndex(s => s >= '09:00'));
       let targetSlot = slots.slice(preferredStartIdx).find(s => !appState.schedule[dayNum][s]);
       if (!targetSlot) targetSlot = slots.find(s => !appState.schedule[dayNum][s]);
@@ -2164,7 +2519,6 @@
       const slots = generateTimeSlots();
       const daySchedule = appState.schedule[dayNum];
 
-      // 將同日分散但完全相同的項目緊湊整合至第一次出現的連續時段
       const seenFirstIdx = new Map();
       let mergedCount = 0;
 
@@ -2178,7 +2532,6 @@
         } else {
           const prevSlot = i > 0 ? daySchedule[slots[i - 1]] : null;
           if (!prevSlot || !isSameEvent(prevSlot, it)) {
-            // 移至該項目的尾端連續格
             let targetIdx = seenFirstIdx.get(key);
             while (targetIdx < slots.length && daySchedule[slots[targetIdx]] && isSameEvent(daySchedule[slots[targetIdx]], it)) {
               targetIdx++;
@@ -2243,7 +2596,6 @@
         actualChild: document.getElementById('edit-slot-child-act').value === '' ? null : Number(document.getElementById('edit-slot-child-act').value)
       };
 
-      // 同步更新連續合併區塊
       const slots = generateTimeSlots();
       const startIdx = slots.indexOf(timeStr);
       let k = 0;
@@ -2252,7 +2604,6 @@
         k++;
       }
 
-      // 同步回左側卡片庫
       if (origItem.cardId) {
         const card = appState.cards.find(c => c.id === origItem.cardId);
         if (card) {
@@ -2428,13 +2779,16 @@
       document.getElementById('lightbox-img').style.transform = 'scale(1)';
     };
 
-    // ==================== 功能 5：輸出 PDF / 列印 (模式 A 獨立每一天橫向 & 模式 B 單頁總覽含時間與地點) ====================
+    // ==================== 功能 5：輸出 PDF / 列印 (模式 A & 模式 B 含時間與地點，可選 1 頁或多頁，預設 1 頁) ====================
     window.openPrintModal = function () {
       openModal('print-modal');
     };
 
     window.executePrint = function (mode) {
+      const modeBPagesSelect = document.getElementById('print-mode-b-pages');
+      const modeBPageSetting = modeBPagesSelect ? modeBPagesSelect.value : '1';
       closeModal('print-modal');
+
       const printArea = document.getElementById('print-area');
       const styleEl = document.getElementById('dynamic-print-style');
       const days = getTripDays();
@@ -2516,8 +2870,29 @@
 
         printArea.innerHTML = pagesHtml;
       } else {
-        // 模式 B：單頁行程精簡總覽 (清晰列出當日住宿，以及實際行程的時間、名稱與地點/地址)
-        styleEl.textContent = `@media print { @page { size: A4 portrait; margin: 9mm; } }`;
+        // 模式 B：全行程總覽 (含實際行程時間及地點，可選 1 頁或多頁，預設為 1 頁)
+        const isOnePage = modeBPageSetting === '1';
+
+        // 計算總行程列數以動態微調單頁字距，確保「預設 1 頁」完整容納不溢頁
+        let totalEventCount = 0;
+        days.forEach(dObj => {
+          const daySched = appState.schedule[dObj.day] || {};
+          slots.forEach((t, idx) => {
+            const it = daySched[t];
+            if (!it) return;
+            const prev = idx > 0 ? daySched[slots[idx - 1]] : null;
+            if (!prev || !isSameEvent(prev, it)) totalEventCount++;
+          });
+        });
+
+        const compactScale = isOnePage && (days.length > 5 || totalEventCount > 24);
+        const baseFontSize = isOnePage ? (compactScale ? '9.5px' : '10.5px') : '12.5px';
+        const cellPadding = isOnePage ? (compactScale ? '3px 5px' : '4px 6px') : '7px 9px';
+        const itemSpacing = isOnePage ? (compactScale ? '1.5px' : '2.5px') : '5px';
+
+        styleEl.textContent = isOnePage
+          ? `@media print { @page { size: A4 portrait; margin: 7mm; } }`
+          : `@media print { @page { size: A4 portrait; margin: 10mm; } }`;
 
         const summaryRows = days.map(dObj => {
           const daySchedule = appState.schedule[dObj.day] || {};
@@ -2551,16 +2926,15 @@
 
             if (it.category === '宿') {
               if (!hotels.has(it.title)) {
-                hotels.set(it.title, locationText);
+                hotels.set(it.title, { timeLabel, locationText });
               }
             } else {
-              // 實際行程：顯示時間、行程名稱（景點/購物/食/交通/其他）與地點/地址
-              const catBadge = it.category === '交通' || it.category === 'PASS' ? `[${it.category}]` : '✿';
+              const catBadge = it.category === '交通' || it.category === 'PASS' ? `[${it.category}]` : `[${it.category}]`;
               itineraryItems.push(`
-                <div style="margin-bottom:3px;line-height:1.35;border-bottom:1px dashed #E5E7EB;padding-bottom:2px;">
-                  <span style="display:inline-block;font-weight:900;color:#084C7F;background:#F0F7FF;border:1px solid #BCD7F5;border-radius:4px;padding:0 4px;font-size:10.5px;margin-right:4px;">${timeLabel}</span>
-                  <span style="font-weight:700;color:#222;">${catBadge} ${escapeHtml(it.title)}</span>
-                  ${locationText ? `<span style="color:#555;font-size:10.5px;margin-left:4px;">📍${escapeHtml(locationText)}</span>` : ''}
+                <div style="margin-bottom:${itemSpacing};line-height:1.32;border-bottom:1px dashed #E5E7EB;padding-bottom:${itemSpacing};">
+                  <span style="display:inline-block;font-weight:900;color:#084C7F;background:#F0F7FF;border:1px solid #BCD7F5;border-radius:3px;padding:0 4px;font-size:0.92em;margin-right:4px;">🕒 ${timeLabel}</span>
+                  <span style="font-weight:700;color:#1F2937;">${catBadge} ${escapeHtml(it.title)}</span>
+                  ${locationText ? `<span style="color:#4B5563;font-size:0.93em;margin-left:5px;">📍${escapeHtml(locationText)}</span>` : ''}
                 </div>
               `);
             }
@@ -2569,24 +2943,24 @@
           }
 
           const hotelHtml = hotels.size
-            ? Array.from(hotels.entries()).map(([hName, hLoc]) => `
-                <div style="margin-bottom:3px;line-height:1.35;">
+            ? Array.from(hotels.entries()).map(([hName, hInfo]) => `
+                <div style="margin-bottom:3px;line-height:1.32;">
                   <div>🏨 ${escapeHtml(hName)}</div>
-                  ${hLoc ? `<div style="font-size:10px;font-weight:normal;color:#555;">📍${escapeHtml(hLoc)}</div>` : ''}
+                  ${hInfo.locationText ? `<div style="font-size:0.9em;font-weight:normal;color:#4B5563;">📍${escapeHtml(hInfo.locationText)}</div>` : ''}
                 </div>
               `).join('')
             : '<span style="color:#999;">—</span>';
 
           return `
-            <tr>
-              <td style="border:1px solid #333;padding:6px 7px;font-weight:bold;white-space:nowrap;background:#FFFDF7;vertical-align:top;">
-                <div style="font-size:12.5px;">Day ${dObj.day}</div>
-                <div style="font-size:10.5px;font-weight:normal;color:#444;">${dObj.dateStr} (週${dObj.weekday})</div>
+            <tr class="${!isOnePage ? 'print-avoid-break' : ''}">
+              <td style="border:1px solid #333;padding:${cellPadding};font-weight:bold;white-space:nowrap;background:#FFFDF7;vertical-align:top;">
+                <div style="font-size:1.08em;">Day ${dObj.day}</div>
+                <div style="font-size:0.9em;font-weight:normal;color:#444;">${dObj.dateStr} (週${dObj.weekday})</div>
               </td>
-              <td style="border:1px solid #333;padding:6px 7px;font-weight:bold;color:#3D1E6D;vertical-align:top;">
+              <td style="border:1px solid #333;padding:${cellPadding};font-weight:bold;color:#3D1E6D;vertical-align:top;">
                 ${hotelHtml}
               </td>
-              <td style="border:1px solid #333;padding:6px 7px;vertical-align:top;">
+              <td style="border:1px solid #333;padding:${cellPadding};vertical-align:top;">
                 ${itineraryItems.length ? itineraryItems.join('') : '<span style="color:#999;">—</span>'}
               </td>
             </tr>
@@ -2594,24 +2968,24 @@
         }).join('');
 
         printArea.innerHTML = `
-          <div style="font-family:'Noto Sans TC',sans-serif;">
-            <div style="border-bottom:2px solid #333;padding-bottom:6px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:flex-end;">
+          <div style="font-family:'Noto Sans TC',sans-serif;font-size:${baseFontSize};">
+            <div style="border-bottom:2px solid #333;padding-bottom:5px;margin-bottom:7px;display:flex;justify-content:space-between;align-items:flex-end;">
               <div>
-                <h1 style="font-size:18px;font-weight:900;margin:0;">${escapeHtml(appState.title)} — 行程精簡總覽表</h1>
-                <div style="font-size:11px;margin-top:2px;">日期：${appState.startDate} 至 ${appState.endDate}（大人 ${appState.adults} 位、小童 ${appState.children} 位）</div>
+                <h1 style="font-size:${isOnePage ? '16px' : '19px'};font-weight:900;margin:0;">${escapeHtml(appState.title)} — 行程總覽表（${isOnePage ? '單頁精簡版' : '多頁詳細版'}）</h1>
+                <div style="font-size:0.95em;margin-top:2px;">日期：${appState.startDate} 至 ${appState.endDate}（大人 ${appState.adults} 位、小童 ${appState.children} 位）</div>
               </div>
-              <div style="text-align:right;font-size:11px;font-weight:bold;">
+              <div style="text-align:right;font-size:0.95em;font-weight:bold;">
                 <div>旅行預算總金額：HK$ ${formatMoney(stats.totalBudgetHKD)}</div>
                 <div>旅行真實總金額：HK$ ${formatMoney(stats.totalActualHKD)}</div>
               </div>
             </div>
 
-            <table style="width:100%;border-collapse:collapse;font-size:11.5px;">
+            <table style="width:100%;border-collapse:collapse;font-size:${baseFontSize};">
               <thead>
                 <tr style="background:#FFE6EA;">
-                  <th style="border:1px solid #333;padding:6px;width:105px;">日期</th>
-                  <th style="border:1px solid #333;padding:6px;width:175px;">當日住宿</th>
-                  <th style="border:1px solid #333;padding:6px;">實際行程（時間・名稱・地點/地址）</th>
+                  <th style="border:1px solid #333;padding:${cellPadding};width:98px;">日期</th>
+                  <th style="border:1px solid #333;padding:${cellPadding};width:165px;">當日住宿與地點</th>
+                  <th style="border:1px solid #333;padding:${cellPadding};">實際行程（時間・類別與名稱・地點/地址）</th>
                 </tr>
               </thead>
               <tbody>${summaryRows}</tbody>
@@ -2625,12 +2999,20 @@
       }, 150);
     };
 
-    // ==================== 功能 5：儲存行程、開新記錄、翻閱歷史記錄 (Firebase + IndexedDB) ====================
+    // ==================== 功能 5：儲存行程、開新記錄、翻閱歷史記錄 (Firebase + IndexedDB + GitHub) ====================
     async function autoSaveToLocal() {
+      appState._lastModified = Date.now();
       await idbSet('current_active_trip', appState);
+      // 即時自動同步至 Firebase 與 GitHub 多設備
+      try {
+        const cleanData = JSON.parse(JSON.stringify(appState));
+        set(ref(db, `trips/${appState.tripId}`), cleanData).catch(() => {});
+      } catch (e) {}
+      scheduleGithubAutoSync();
     }
 
     window.saveCurrentTrip = async function () {
+      appState._lastModified = Date.now();
       const recordKey = `trips/${appState.tripId}`;
       const summaryMeta = {
         tripId: appState.tripId,
@@ -2653,9 +3035,12 @@
         indexList.unshift(summaryMeta);
       }
       await saveData('trips_index', indexList);
-      await autoSaveToLocal();
+      await idbSet('current_active_trip', appState);
+      if (githubConfig.token) {
+        await pushStateToGithub(true);
+      }
       refreshHistoryCount();
-      showToast(`行程「${appState.title}」已儲存至雲端與 IndexedDB！`, 'success');
+      showToast(`行程「${appState.title}」已同步儲存至雲端、GitHub 與 IndexedDB！`, 'success');
     };
 
     window.createNewTrip = async function () {
@@ -2663,6 +3048,7 @@
       const newEnd = new Date(Date.now() + 2 * 86400000).toISOString().split('T')[0];
       appState = {
         tripId: 'trip_' + Date.now(),
+        _lastModified: Date.now(),
         title: '全新旅行規劃手帳',
         startDate: newStart,
         endDate: newEnd,
@@ -2679,6 +3065,7 @@
         extraExpenses: [],
         passes: appState.passes
       };
+      attachFirebaseRealtimeListener(appState.tripId);
       renderAll();
       await autoSaveToLocal();
       showToast('已開啟全新空白行程記錄！', 'success');
@@ -2739,6 +3126,7 @@
         extraExpenses: loaded.extraExpenses || [],
         passes: loaded.passes || JSON.parse(JSON.stringify(DEFAULT_PASSES))
       };
+      attachFirebaseRealtimeListener(appState.tripId);
       await autoSaveToLocal();
       closeModal('history-modal');
       renderAll();
@@ -2775,10 +3163,10 @@
 
     function escapeHtml(str) {
       return String(str ?? '')
-        .replace(/&/g, '&')
-        .replace(/</g, '<')
-        .replace(/>/g, '>')
-        .replace(/"/g, '"');
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
     }
 
     function escapeJs(str) {
@@ -2788,6 +3176,7 @@
     // ==================== 初始化啟動 ====================
     async function initApp() {
       try {
+        await loadGithubConfig();
         const cached = await idbGet('current_active_trip');
         if (cached && cached.tripId) {
           appState = {
@@ -2799,8 +3188,13 @@
             passes: cached.passes || appState.passes
           };
         }
+        if (githubConfig.token) {
+          await pullStateFromGithub(true);
+          startGithubMultiDevicePolling();
+        }
+        attachFirebaseRealtimeListener(appState.tripId);
       } catch (e) {
-        console.warn('讀取 IndexedDB 初始快取失敗:', e);
+        console.warn('讀取初始快取或遠端同步失敗:', e);
       }
       renderAll();
     }
