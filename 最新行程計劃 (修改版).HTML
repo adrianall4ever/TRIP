@@ -1,0 +1,2811 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>旅手帳 ✿ 日系手繪旅遊行程計算與規劃神器</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts: Zen Maru Gothic (日系手繪圓體) & Noto Sans TC -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <!-- SheetJS (XLSX) for Excel Demo Download & Upload -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <!-- PDF.js for PDF thumbnail rendering in PASS section -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    if (window.pdfjsLib) {
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+  </script>
+
+  <style>
+    :root {
+      --bg-paper: #FFFDF7;
+      --ink-dark: #3B332B;
+      --sakura: #FF9EAA;
+      --sakura-light: #FFE6EA;
+      --matcha: #88C999;
+      --matcha-light: #E5F6E9;
+      --sky: #7CC6FE;
+      --sky-light: #E3F3FF;
+      --cream: #FFD97D;
+      --cream-light: #FFF6DC;
+      --peach: #FFB07C;
+      --lavender: #C3B1E1;
+    }
+
+    body {
+      font-family: 'Zen Maru Gothic', 'Noto Sans TC', sans-serif;
+      background-color: var(--bg-paper);
+      color: var(--ink-dark);
+      background-image:
+        radial-gradient(#E8DFD1 1.1px, transparent 1.1px),
+        radial-gradient(#F3ECE1 1.1px, var(--bg-paper) 1.1px);
+      background-size: 28px 28px;
+      background-position: 0 0, 14px 14px;
+      overflow-x: hidden;
+    }
+
+    /* 手繪不規則邊框與立體陰影 */
+    .sketch-box {
+      background: #FFFFFF;
+      border: 2.5px solid var(--ink-dark);
+      border-radius: 18px 22px 16px 20px / 20px 16px 22px 18px;
+      box-shadow: 4px 4px 0px var(--ink-dark);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .sketch-box-sm {
+      background: #FFFFFF;
+      border: 2px solid var(--ink-dark);
+      border-radius: 12px 15px 11px 14px / 14px 11px 15px 12px;
+      box-shadow: 2.5px 2.5px 0px var(--ink-dark);
+    }
+
+    .sketch-btn {
+      border: 2px solid var(--ink-dark);
+      border-radius: 14px 18px 14px 16px / 16px 14px 18px 14px;
+      box-shadow: 2.5px 2.5px 0px var(--ink-dark);
+      font-weight: 700;
+      transition: all 0.12s ease;
+      cursor: pointer;
+    }
+    .sketch-btn:hover {
+      transform: translate(-1px, -1px);
+      box-shadow: 3.5px 3.5px 0px var(--ink-dark);
+    }
+    .sketch-btn:active {
+      transform: translate(2px, 2px);
+      box-shadow: 0px 0px 0px var(--ink-dark);
+    }
+
+    .sketch-input {
+      border: 2px solid var(--ink-dark);
+      border-radius: 10px 12px 10px 11px;
+      background-color: #FFFDF9;
+      padding: 6px 10px;
+      font-weight: 500;
+      outline: none;
+      transition: background-color 0.15s;
+    }
+    .sketch-input:focus {
+      background-color: #FFF7E0;
+      box-shadow: 0 0 0 3px rgba(255, 217, 125, 0.5);
+    }
+
+    /* 紙膠帶裝飾 */
+    .washi-tape {
+      position: relative;
+    }
+    .washi-tape::before {
+      content: "";
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%) rotate(-2deg);
+      width: 86px;
+      height: 20px;
+      background: rgba(255, 158, 170, 0.65);
+      border-left: 2px dashed rgba(59, 51, 43, 0.25);
+      border-right: 2px dashed rgba(59, 51, 43, 0.25);
+      z-index: 5;
+      pointer-events: none;
+    }
+    .washi-tape-blue::before { background: rgba(124, 198, 254, 0.65); transform: translateX(-50%) rotate(1.5deg); }
+    .washi-tape-green::before { background: rgba(136, 201, 153, 0.65); transform: translateX(-50%) rotate(-1.5deg); }
+    .washi-tape-yellow::before { background: rgba(255, 217, 125, 0.75); transform: translateX(-50%) rotate(2deg); }
+
+    /* 自訂捲軸 */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #F5EFE6; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb { background: #C8B8A6; border-radius: 10px; border: 2px solid #F5EFE6; }
+    ::-webkit-scrollbar-thumb:hover { background: #A8947E; }
+
+    /* 類別配色 */
+    .cat-食 { background-color: #FFE8D6; border-color: #3B332B; color: #7F3900; }
+    .cat-宿 { background-color: #E2D9F3; border-color: #3B332B; color: #3D1E6D; }
+    .cat-交通 { background-color: #D8F0FF; border-color: #3B332B; color: #084C7F; }
+    .cat-購物 { background-color: #FFE0EA; border-color: #3B332B; color: #8A1538; }
+    .cat-景點 { background-color: #DDF7E3; border-color: #3B332B; color: #155E2B; }
+    .cat-其他 { background-color: #FFF4CC; border-color: #3B332B; color: #6B5300; }
+    .cat-PASS { background-color: #FFD6A5; border-color: #3B332B; color: #6E3300; }
+
+    /* 已使用卡片樣式 */
+    .card-used {
+      background-color: #E5E7EB !important;
+      color: #6B7280 !important;
+      border-style: dashed !important;
+      opacity: 0.78;
+    }
+
+    /* 拖拉高亮 */
+    .drop-zone-active {
+      background-color: #FFF5C0 !important;
+      border: 2.5px dashed #FF7B89 !important;
+      transform: scale(1.01);
+    }
+
+    /* 浮動背景插畫 */
+    .bg-landmark {
+      position: fixed;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.16;
+    }
+
+    /* 列印專用樣式 */
+    @media print {
+      body {
+        background: #FFFFFF !important;
+        color: #000000 !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      #print-area {
+        display: block !important;
+        width: 100% !important;
+      }
+      .print-page-break {
+        page-break-after: always;
+        break-after: page;
+      }
+      .sketch-box, .sketch-box-sm {
+        box-shadow: none !important;
+        border: 1.5px solid #333 !important;
+      }
+    }
+  </style>
+  <style id="dynamic-print-style"></style>
+</head>
+<body class="min-h-screen relative pb-16">
+
+  <!-- 背景手繪世界名勝建築 SVG 裝飾 -->
+  <!-- 左上：富士山與櫻花 -->
+  <svg class="bg-landmark top-6 left-4 w-56 h-44 no-print" viewBox="0 0 240 180" fill="none" stroke="#3B332B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20 155 Q75 110 100 45 Q120 55 140 45 Q165 110 220 155 Z" fill="#90CAF9"/>
+    <path d="M100 45 Q120 55 140 45 L153 76 Q138 68 128 82 Q120 70 110 80 Q100 68 87 76 Z" fill="#FFFFFF"/>
+    <path d="M10 155 Q120 148 230 155" stroke-width="4"/>
+    <circle cx="48" cy="48" r="16" fill="#FFD97D"/>
+    <path d="M175 35 Q195 25 215 35" />
+    <path d="M185 45 Q200 38 215 45" />
+  </svg>
+
+  <!-- 右上：東京鐵塔 -->
+  <svg class="bg-landmark top-8 right-6 w-44 h-60 no-print" viewBox="0 0 180 260" fill="none" stroke="#3B332B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="90" y1="12" x2="90" y2="45" stroke-width="3.5"/>
+    <path d="M84 45 L96 45 L103 115 L77 115 Z" fill="#FF8A80"/>
+    <rect x="70" y="115" width="40" height="14" rx="3" fill="#FFF"/>
+    <path d="M75 129 L105 129 L122 185 L58 185 Z" fill="#FF8A80"/>
+    <rect x="52" y="185" width="76" height="16" rx="3" fill="#FFF"/>
+    <path d="M58 201 L122 201 L148 248 L112 248 Q90 218 68 248 L32 248 Z" fill="#FF8A80"/>
+    <line x1="80" y1="75" x2="100" y2="75"/>
+    <line x1="68" y1="155" x2="112" y2="155"/>
+  </svg>
+
+  <!-- 左下：巴黎鐵塔與凱旋門 -->
+  <svg class="bg-landmark bottom-10 left-6 w-52 h-56 no-print" viewBox="0 0 220 220" fill="none" stroke="#3B332B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M105 15 L115 15 L125 90 L95 90 Z" fill="#FFD97D"/>
+    <rect x="88" y="90" width="44" height="10" fill="#FFF"/>
+    <path d="M92 100 L128 100 L145 150 L75 150 Z" fill="#FFD97D"/>
+    <rect x="68" y="150" width="84" height="12" fill="#FFF"/>
+    <path d="M74 162 L146 162 L172 205 L135 205 Q110 175 85 205 L48 205 Z" fill="#FFD97D"/>
+    <path d="M25 205 L25 160 L58 160 L58 205 M35 205 L35 178 Q41.5 170 48 178 L48 205" fill="#E0D4FC"/>
+  </svg>
+
+  <!-- 右下：淺草雷門燈籠與倫敦大笨鐘剪影 -->
+  <svg class="bg-landmark bottom-10 right-6 w-56 h-56 no-print" viewBox="0 0 220 220" fill="none" stroke="#3B332B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="45" y="55" width="50" height="12" rx="4" fill="#3B332B"/>
+    <ellipse cx="70" cy="105" rx="34" ry="42" fill="#FF6B6B"/>
+    <path d="M40 90 Q70 98 100 90 M37 105 Q70 113 103 105 M40 120 Q70 128 100 120"/>
+    <rect x="48" y="145" width="44" height="10" rx="3" fill="#3B332B"/>
+    <path d="M150 205 L150 75 L168 35 L186 75 L186 205 Z" fill="#FFE0B2"/>
+    <circle cx="168" cy="95" r="13" fill="#FFF"/>
+    <path d="M168 88 L168 95 L174 95"/>
+  </svg>
+
+  <!-- 頂部通知 Toast 容器 -->
+  <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none no-print"></div>
+
+  <!-- 主頁面容器 -->
+  <div class="relative z-10 max-w-[1520px] mx-auto px-3 sm:px-6 pt-4 no-print">
+
+    <!-- 頂部可愛標題列與雲端狀態 -->
+    <header class="sketch-box bg-gradient-to-r from-[#FFE8EE] via-[#FFF8DC] to-[#E3F4FF] p-4 sm:p-5 mb-5 flex flex-col lg:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-3 sm:gap-4">
+        <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-[#FFD97D] border-2 border-[#3B332B] flex items-center justify-center shadow-[3px_3px_0_#3B332B] shrink-0 rotate-[-3deg]">
+          <svg class="w-10 h-10" viewBox="0 0 64 64" fill="none" stroke="#3B332B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8 34 L56 16 L40 52 L30 38 L18 44 L22 33 Z" fill="#FF9EAA"/>
+            <path d="M56 16 L30 38"/>
+            <circle cx="14" cy="16" r="4" fill="#7CC6FE"/>
+            <path d="M46 52 Q52 56 58 50" stroke-dasharray="3 3"/>
+          </svg>
+        </div>
+        <div>
+          <div class="flex flex-wrap items-center gap-2">
+            <h1 class="text-2xl sm:text-3xl font-black tracking-wide text-[#3B332B]">
+              CHY旅遊行程規劃
+            </h1>
+            <span class="px-2.5 py-0.5 text-xs font-bold bg-[#FF9EAA] text-[#3B332B] border-2 border-[#3B332B] rounded-full">
+              update as at 26.11.2026
+            </span>
+          </div>
+          <p class="text-xs sm:text-sm text-[#5C5046] mt-1 font-medium">
+            日系手繪版
+          </p>
+        </div>
+      </div>
+
+      <!-- 雲端同步與歷史記錄操作按鈕列 -->
+      <div class="flex flex-wrap items-center justify-center gap-2">
+        <div id="sync-status-badge" class="px-3 py-1.5 rounded-full text-xs font-bold bg-[#E5F6E9] border-2 border-[#3B332B] flex items-center gap-1.5">
+          <span class="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></span>
+          <span id="sync-status-text">Firebase + IndexedDB 就緒</span>
+        </div>
+
+        <button onclick="createNewTrip()" class="sketch-btn bg-[#FFF4CC] hover:bg-[#FFE999] px-3.5 py-2 text-sm flex items-center gap-1.5">
+          <i class="fa-solid fa-file-circle-plus text-amber-600"></i> 開新記錄
+        </button>
+
+        <button onclick="saveCurrentTrip()" class="sketch-btn bg-[#88C999] hover:bg-[#73BA86] px-3.5 py-2 text-sm flex items-center gap-1.5">
+          <i class="fa-solid fa-cloud-arrow-up"></i> 儲存行程
+        </button>
+
+        <button onclick="openHistoryModal()" class="sketch-btn bg-[#7CC6FE] hover:bg-[#62B8FA] px-3.5 py-2 text-sm flex items-center gap-1.5">
+          <i class="fa-solid fa-book-open"></i> 歷史記錄 (<span id="history-count">0</span>)
+        </button>
+
+        <button onclick="openPrintModal()" class="sketch-btn bg-[#FF9EAA] hover:bg-[#FF8594] px-3.5 py-2 text-sm flex items-center gap-1.5">
+          <i class="fa-solid fa-print"></i> 輸出 PDF / 列印
+        </button>
+      </div>
+    </header>
+
+    <!-- 功能 1：行程基本設定、時間表參數與多幣別預算總覽 -->
+    <section class="sketch-box washi-tape p-4 sm:p-5 mb-6 bg-[#FFFFFF]">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-4 pb-2 border-b-2 border-dashed border-[#E0D5C5]">
+        <h2 class="text-lg sm:text-xl font-black flex items-center gap-2">
+          <span class="w-8 h-8 rounded-xl bg-[#FFD97D] border-2 border-[#3B332B] flex items-center justify-center text-sm">1</span>
+          行程基本資料
+        </h2>
+        <div class="text-xs font-bold text-[#6E6054] bg-[#FFF6DC] px-3 py-1 rounded-full border border-[#3B332B]">
+          <i class="fa-solid fa-coins text-amber-500 mr-1"></i>基準結算貨幣：港幣 (HKD)
+        </div>
+      </div>
+
+      <!-- 第一排：地點、人數、日期、時間軸設定 -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 mb-4">
+        <div class="lg:col-span-2">
+          <label class="block text-xs font-bold mb-1 text-[#5C5046]"><i class="fa-solid fa-location-dot text-rose-500 mr-1"></i>目的地 / 行程名稱</label>
+          <input id="trip-title" type="text" value="東京富士山 5 日開心手繪之旅" onchange="updateTripMeta()" class="sketch-input w-full text-sm font-bold" placeholder="例如：東京近郊 5 日遊" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold mb-1 text-[#5C5046]"><i class="fa-solid fa-calendar-days text-sky-500 mr-1"></i>出發日期</label>
+          <input id="trip-start-date" type="date" onchange="handleDateRangeChange()" class="sketch-input w-full text-sm" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold mb-1 text-[#5C5046]"><i class="fa-solid fa-calendar-check text-emerald-500 mr-1"></i>結束日期</label>
+          <input id="trip-end-date" type="date" onchange="handleDateRangeChange()" class="sketch-input w-full text-sm" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-xs font-bold mb-1 text-[#5C5046]"><i class="fa-solid fa-user text-indigo-500 mr-1"></i>大人人數</label>
+            <input id="trip-adults" type="number" min="1" max="50" value="2" onchange="updateTripMeta()" class="sketch-input w-full text-sm text-center font-bold" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold mb-1 text-[#5C5046]"><i class="fa-solid fa-child text-pink-500 mr-1"></i>小童人數</label>
+            <input id="trip-children" type="number" min="0" max="50" value="1" onchange="updateTripMeta()" class="sketch-input w-full text-sm text-center font-bold" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold mb-1 text-[#5C5046]"><i class="fa-solid fa-clock text-amber-600 mr-1"></i>時間間距</label>
+          <select id="trip-interval" onchange="handleTimeSettingsChange()" class="sketch-input w-full text-sm font-bold">
+            <option value="15">每格 15 分鐘</option>
+            <option value="30" selected>每格 30 分鐘 (預設)</option>
+            <option value="60">每格 60 分鐘</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 第二排：時間範圍、匯率設定與幣別顯示切換 -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 items-end bg-[#FFFDF5] p-3 rounded-2xl border-2 border-[#E6DCCB]">
+        <div class="lg:col-span-3 grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-xs font-bold mb-1 text-[#5C5046]">開始時間</label>
+            <input id="trip-start-time" type="time" value="00:00" onchange="handleTimeSettingsChange()" class="sketch-input w-full text-xs sm:text-sm" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold mb-1 text-[#5C5046]">結束時間</label>
+            <input id="trip-end-time" type="time" value="23:59" onchange="handleTimeSettingsChange()" class="sketch-input w-full text-xs sm:text-sm" />
+          </div>
+        </div>
+
+        <!-- 匯率微調區 (生成當日匯率 -> 轉 HKD) -->
+        <div class="lg:col-span-6 grid grid-cols-3 gap-2">
+          <div class="bg-white p-2 rounded-xl border border-[#3B332B]">
+            <div class="flex items-center justify-between text-[11px] font-bold text-rose-600">
+              <span>1 JPY → HKD</span>
+              <span id="rate-date-tag" class="text-[10px] text-gray-400">當日匯率</span>
+            </div>
+            <input id="rate-JPY" type="number" step="0.0001" value="0.0520" onchange="updateRates()" class="w-full text-sm font-black text-[#3B332B] bg-transparent border-b border-dashed border-gray-400 focus:outline-none mt-0.5" />
+          </div>
+
+          <div class="bg-white p-2 rounded-xl border border-[#3B332B]">
+            <div class="flex items-center justify-between text-[11px] font-bold text-amber-600">
+              <span>1 CNY → HKD</span>
+              <span class="text-[10px] text-gray-400">人民幣</span>
+            </div>
+            <input id="rate-CNY" type="number" step="0.001" value="1.080" onchange="updateRates()" class="w-full text-sm font-black text-[#3B332B] bg-transparent border-b border-dashed border-gray-400 focus:outline-none mt-0.5" />
+          </div>
+
+          <div class="bg-white p-2 rounded-xl border border-[#3B332B]">
+            <div class="flex items-center justify-between text-[11px] font-bold text-sky-600">
+              <span>預設輸入幣值</span>
+              <button onclick="fetchLiveRates()" title="更新最新參考匯率" class="text-[10px] underline text-sky-600 hover:text-sky-800">更新</button>
+            </div>
+            <select id="display-currency" onchange="renderAll()" class="w-full text-sm font-black text-[#3B332B] bg-transparent focus:outline-none mt-0.5">
+              <option value="HKD">HKD 港幣 ($)</option>
+              <option value="JPY" selected>JPY 日元 (¥)</option>
+              <option value="CNY">CNY 人民幣 (¥)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 總金額即時統計儀表板 (港幣計算) -->
+        <div class="lg:col-span-3 grid grid-cols-2 gap-2">
+          <div class="sketch-box-sm bg-[#E3F3FF] p-2.5 text-center">
+            <div class="text-[11px] font-bold text-[#084C7F]">整個旅行預算總額</div>
+            <div class="text-base sm:text-lg font-black text-[#084C7F] truncate">
+              HK$ <span id="total-budget-hkd">0</span>
+            </div>
+          </div>
+          <div class="sketch-box-sm bg-[#FFE6EA] p-2.5 text-center">
+            <div class="text-[11px] font-bold text-[#8A1538]">整個旅行真實總額</div>
+            <div class="text-base sm:text-lg font-black text-[#8A1538] truncate">
+              HK$ <span id="total-actual-hkd">0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 每日預算摘要與交通/住宿獨立快覽條 -->
+      <div class="mt-3 pt-3 border-t border-dashed border-[#E0D5C5] flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3">
+        <div id="daily-budget-pills" class="flex flex-wrap items-center gap-2">
+          <!-- 動態生成每日預計金額膠囊 -->
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2 text-xs font-bold">
+          <span class="px-2.5 py-1 rounded-lg bg-[#D8F0FF] border border-[#3B332B] text-[#084C7F]">
+            <i class="fa-solid fa-train-subway mr-1"></i>交通預算: HK$ <span id="cat-transport-hkd">0</span>
+          </span>
+          <span class="px-2.5 py-1 rounded-lg bg-[#E2D9F3] border border-[#3B332B] text-[#3D1E6D]">
+            <i class="fa-solid fa-bed mr-1"></i>住宿預算: HK$ <span id="cat-hotel-hkd">0</span>
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 主工作區：左側「卡片生成庫 & Excel 匯入 & 額外支出」 + 右側「固定時間表」 -->
+    <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start mb-8">
+
+      <!-- 左側欄 (5 欄)：功能 2 卡片庫 + 特別 PASS + Excel + 功能 4 額外支出 -->
+      <div class="xl:col-span-5 flex flex-col gap-5">
+
+        <!-- 功能 2：Excel 匯入匯出 & 新增行程方格 -->
+        <section class="sketch-box washi-tape-blue p-4 sm:p-5 bg-white">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-3 pb-2 border-b-2 border-dashed border-[#E0D5C5]">
+            <h2 class="text-lg font-black flex items-center gap-2">
+              <span class="w-7 h-7 rounded-xl bg-[#7CC6FE] border-2 border-[#3B332B] flex items-center justify-center text-sm">2</span>
+              行程記錄/ Excel 匯入
+            </h2>
+
+            <!-- Excel DEMO 下載與上傳 -->
+            <div class="flex items-center gap-1.5">
+              <button onclick="downloadExcelDemo()" class="sketch-btn bg-[#E5F6E9] hover:bg-[#CFF0D7] px-2.5 py-1 text-xs flex items-center gap-1" title="下載包含各類別與幣別的 Excel 範本">
+                <i class="fa-solid fa-file-excel text-emerald-700"></i> 下載 DEMO
+              </button>
+              <label class="sketch-btn bg-[#FFF4CC] hover:bg-[#FFE89E] px-2.5 py-1 text-xs flex items-center gap-1 cursor-pointer" title="上傳 Excel 自動檢查重複並生成方格">
+                <i class="fa-solid fa-upload text-amber-700"></i> 上傳 Excel
+                <input type="file" accept=".xlsx,.xls,.csv" onchange="handleExcelUpload(event)" class="hidden" />
+              </label>
+            </div>
+          </div>
+
+          <!-- 快速輸入表單生成方格 -->
+          <form id="card-creator-form" onsubmit="handleCreateCard(event)" class="bg-[#FFFDF7] p-3 rounded-2xl border-2 border-[#E6DCCB] mb-3">
+            <div class="grid grid-cols-12 gap-2 mb-2">
+              <div class="col-span-4">
+                <label class="block text-[11px] font-bold mb-0.5">類別</label>
+                <select id="card-category" class="sketch-input w-full text-xs font-bold">
+                  <option value="景點">🗻 景點</option>
+                  <option value="食">🍜 食</option>
+                  <option value="宿">🏨 宿</option>
+                  <option value="交通">🚃 交通</option>
+                  <option value="購物">🛍️ 購物</option>
+                  <option value="其他">✨ 其他</option>
+                </select>
+              </div>
+              <div class="col-span-4">
+                <label class="block text-[11px] font-bold mb-0.5">地區</label>
+                <input id="card-area" type="text" placeholder="如：新宿 / 淺草" class="sketch-input w-full text-xs" />
+              </div>
+              <div class="col-span-4">
+                <label class="block text-[11px] font-bold mb-0.5">幣別</label>
+                <select id="card-currency" class="sketch-input w-full text-xs font-bold">
+                  <option value="JPY">JPY 日元</option>
+                  <option value="HKD">HKD 港幣</option>
+                  <option value="CNY">CNY 人民幣</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-12 gap-2 mb-2">
+              <div class="col-span-6">
+                <label class="block text-[11px] font-bold mb-0.5">項目名稱 (必填)</label>
+                <input id="card-title" type="text" required placeholder="例如：淺草雷門散步 / 一蘭拉麵" class="sketch-input w-full text-xs font-bold" />
+              </div>
+              <div class="col-span-3">
+                <label class="block text-[11px] font-bold mb-0.5">大人單價</label>
+                <input id="card-adult-price" type="number" min="0" step="any" value="0" class="sketch-input w-full text-xs" />
+              </div>
+              <div class="col-span-3">
+                <label class="block text-[11px] font-bold mb-0.5">小童單價</label>
+                <input id="card-child-price" type="number" min="0" step="any" value="0" class="sketch-input w-full text-xs" />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-12 gap-2 mb-2">
+              <div class="col-span-6">
+                <label class="block text-[11px] font-bold mb-0.5">地址 / 地標 (供 Google Maps 導航)</label>
+                <input id="card-address" type="text" placeholder="例如：東京都台東區淺草 2-3-1" class="sketch-input w-full text-xs" />
+              </div>
+              <div class="col-span-6">
+                <label class="block text-[11px] font-bold mb-0.5 text-amber-700">備註 (填寫會額外生成獨立備註方格)</label>
+                <input id="card-note" type="text" placeholder="例如：記得預約窗口位 / 領取周遊券" class="sketch-input w-full text-xs" />
+              </div>
+            </div>
+
+            <div class="flex justify-end">
+              <button type="submit" class="sketch-btn bg-[#FF9EAA] hover:bg-[#FF8594] w-full sm:w-auto px-5 py-1.5 text-xs">
+                <i class="fa-solid fa-plus mr-1"></i>生成方格
+              </button>
+            </div>
+          </form>
+
+          <!-- 特別方格 (1)：地鐵 3日 PASS / 地鐵 1日 PASS 快速生成 -->
+          <div class="bg-[#FFF4E0] p-2.5 rounded-xl border-2 border-dashed border-[#3B332B] mb-3">
+            <div class="text-xs font-black text-[#6E3300] mb-1.5 flex items-center justify-between">
+              <span><i class="fa-solid fa-ticket mr-1"></i>特別方格：一鍵建立交通 PASS 卡片</span>
+              <span class="text-[10px] font-normal">可自填 PASS 費用</span>
+            </div>
+            <div class="grid grid-cols-3 gap-1.5">
+              <button type="button" onclick="promptSpecialPass('地鐵 3 日 PASS', 1500)" class="sketch-btn bg-[#FFD6A5] hover:bg-[#FFC682] py-1.5 px-2 text-[11px] truncate">
+                + 地鐵 3 日 PASS
+              </button>
+              <button type="button" onclick="promptSpecialPass('地鐵 1 日 PASS', 800)" class="sketch-btn bg-[#FFD6A5] hover:bg-[#FFC682] py-1.5 px-2 text-[11px] truncate">
+                + 地鐵 1 日 PASS
+              </button>
+              <button type="button" onclick="promptSpecialPass('自訂交通周遊券', 3000)" class="sketch-btn bg-[#FFE8C2] hover:bg-[#FFD89C] py-1.5 px-2 text-[11px] truncate">
+                + 自訂 PASS
+              </button>
+            </div>
+          </div>
+
+          <!-- 類別篩選膠囊 -->
+          <div class="flex flex-wrap items-center justify-between gap-1 mb-2">
+            <div class="flex flex-wrap gap-1" id="pool-filter-tabs">
+              <button onclick="setPoolFilter('ALL')" data-filter="ALL" class="pool-filter-btn px-2 py-0.5 rounded-full text-xs font-bold border border-[#3B332B] bg-[#3B332B] text-white">全部</button>
+              <button onclick="setPoolFilter('景點')" data-filter="景點" class="pool-filter-btn px-2 py-0.5 rounded-full text-xs font-bold border border-[#3B332B] bg-[#DDF7E3]">景點</button>
+              <button onclick="setPoolFilter('食')" data-filter="食" class="pool-filter-btn px-2 py-0.5 rounded-full text-xs font-bold border border-[#3B332B] bg-[#FFE8D6]">食</button>
+              <button onclick="setPoolFilter('宿')" data-filter="宿" class="pool-filter-btn px-2 py-0.5 rounded-full text-xs font-bold border border-[#3B332B] bg-[#E2D9F3]">宿</button>
+              <button onclick="setPoolFilter('交通')" data-filter="交通" class="pool-filter-btn px-2 py-0.5 rounded-full text-xs font-bold border border-[#3B332B] bg-[#D8F0FF]">交通</button>
+              <button onclick="setPoolFilter('購物')" data-filter="購物" class="pool-filter-btn px-2 py-0.5 rounded-full text-xs font-bold border border-[#3B332B] bg-[#FFE0EA]">購物</button>
+              <button onclick="setPoolFilter('其他')" data-filter="其他" class="pool-filter-btn px-2 py-0.5 rounded-full text-xs font-bold border border-[#3B332B] bg-[#FFF4CC]">其他</button>
+            </div>
+            <span class="text-[11px] text-gray-500 font-bold">拖拉至右側時間表 ➔</span>
+          </div>
+
+          <!-- 待排程方格列表容器 -->
+          <div id="card-pool-list" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[430px] overflow-y-auto pr-1 pt-1">
+            <!-- 動態渲染方格卡片 -->
+          </div>
+        </section>
+
+        <!-- 功能 4：額外支出 / 臨時 PASS 記錄區 -->
+        <section class="sketch-box washi-tape-yellow p-4 sm:p-5 bg-white">
+          <div class="flex items-center justify-between mb-3 pb-2 border-b-2 border-dashed border-[#E0D5C5]">
+            <h2 class="text-base sm:text-lg font-black flex items-center gap-2">
+              <span class="w-7 h-7 rounded-xl bg-[#FFD97D] border-2 border-[#3B332B] flex items-center justify-center text-sm">4</span>
+              額外支出 / 額外 PASS 記錄
+            </h2>
+            <span class="text-xs font-bold text-[#8A1538]">計入真實總額</span>
+          </div>
+
+          <form onsubmit="handleAddExtraExpense(event)" class="grid grid-cols-12 gap-2 mb-3">
+            <input id="extra-name" type="text" required placeholder="項目（如：Suica儲值 / 額外PASS）" class="sketch-input col-span-5 text-xs" />
+            <input id="extra-amount" type="number" min="0" step="any" required placeholder="總金額" class="sketch-input col-span-3 text-xs" />
+            <select id="extra-currency" class="sketch-input col-span-2 text-xs font-bold px-1">
+              <option value="JPY">JPY</option>
+              <option value="HKD">HKD</option>
+              <option value="CNY">CNY</option>
+            </select>
+            <button type="submit" class="sketch-btn bg-[#88C999] col-span-2 text-xs py-1">
+              + 新增
+            </button>
+          </form>
+
+          <div id="extra-expenses-list" class="space-y-1.5 max-h-40 overflow-y-auto">
+            <!-- 動態列出額外支出 -->
+          </div>
+        </section>
+      </div>
+
+      <!-- 右側欄 (7 欄)：固定於工作區的互動式時間表 (功能 1, 2, 3, 4) -->
+      <section class="xl:col-span-7 sketch-box washi-tape-green p-4 sm:p-5 bg-white xl:sticky xl:top-4">
+        <!-- 時間表頂部控制列：Day 分頁、檢視模式切換、一鍵整合鍵 -->
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3 pb-3 border-b-2 border-dashed border-[#E0D5C5]">
+          <div class="flex flex-wrap items-center gap-1.5" id="day-selector-tabs">
+            <!-- 動態生成 Day 1, Day 2... 與 整個時段總覽 -->
+          </div>
+
+          <div class="flex items-center gap-2">
+            <!-- 一鍵整合當日重複方格按鈕 -->
+            <button id="merge-day-btn" onclick="mergeCurrentDayDuplicates()" class="sketch-btn bg-[#FFD97D] hover:bg-[#FFC94D] px-3 py-1.5 text-xs flex items-center gap-1.5" title="將當日連續或重複的相同內容方格合併">
+              <i class="fa-solid fa-object-group"></i> 一鍵整合重覆方格
+            </button>
+
+            <button onclick="clearCurrentDaySchedule()" class="sketch-btn bg-gray-100 hover:bg-rose-100 text-rose-700 px-2.5 py-1.5 text-xs" title="清空當日時間表">
+              <i class="fa-solid fa-eraser"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- 當日資訊與獨立交通/住宿提示條 -->
+        <div id="schedule-header-info" class="mb-3 p-2.5 rounded-xl bg-[#F7FBF8] border-2 border-[#D4E8D9] flex flex-wrap items-center justify-between gap-2 text-xs">
+          <!-- 動態顯示當日日期、預計花費、實際花費、剪貼簿狀態 -->
+        </div>
+
+        <!-- 時間表主體區域 (單日時間軸 或 整個時段多日對照表) -->
+        <div id="schedule-container" class="max-h-[680px] overflow-y-auto pr-1 space-y-2">
+          <!-- 動態渲染時間格 -->
+        </div>
+      </section>
+    </div>
+
+    <!-- 功能 6：日本交通 PASS 路線圖百科與自訂上傳區 -->
+    <section class="sketch-box washi-tape p-4 sm:p-6 bg-white mb-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b-2 border-dashed border-[#E0D5C5]">
+        <div>
+          <h2 class="text-xl sm:text-2xl font-black flex items-center gap-2">
+            <span class="w-8 h-8 rounded-xl bg-[#C3B1E1] border-2 border-[#3B332B] flex items-center justify-center text-sm">6</span>
+            日本交通 PASS 路線圖與票券百科
+          </h2>
+          <p class="text-xs text-[#5C5046] mt-1">
+            點擊路線圖可<strong>全螢幕高清放大</strong>；支援上傳 <strong>JPEG / PNG / PDF</strong> 或貼上圖片網址直接取代縮圖，並可自由編輯文字與適用範圍！
+          </p>
+        </div>
+
+        <button onclick="addNewPassCard()" class="sketch-btn bg-[#C3B1E1] hover:bg-[#B29CD6] px-4 py-2 text-sm flex items-center gap-1.5 self-start sm:self-auto">
+          <i class="fa-solid fa-plus"></i> 新增自訂 PASS
+        </button>
+      </div>
+
+      <!-- 8 大日本交通 PASS 網格 -->
+      <div id="pass-cards-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
+        <!-- 動態渲染 8 張 PASS 卡片 -->
+      </div>
+    </section>
+
+  </div>
+
+  <!-- ================= 彈出視窗 (Modals) ================= -->
+
+  <!-- 1. 編輯時間表方格與輸入「實際花費 (分大人/小童)」視窗 (功能 2 & 4) -->
+  <div id="slot-edit-modal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4 no-print">
+    <div class="sketch-box bg-white max-w-lg w-full p-5 relative">
+      <button onclick="closeModal('slot-edit-modal')" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-rose-100 border-2 border-[#3B332B] font-black">✕</button>
+      <h3 class="text-lg font-black mb-1 flex items-center gap-2">
+        <i class="fa-solid fa-pen-to-square text-amber-500"></i> 編輯行程內容與實際支出
+      </h3>
+      <p class="text-xs text-gray-500 mb-3">修改名稱、價格或地址時，將會同步更新至左側卡片庫！</p>
+
+      <form onsubmit="saveSlotEdit(event)" class="space-y-3">
+        <input type="hidden" id="edit-slot-day" />
+        <input type="hidden" id="edit-slot-time" />
+
+        <div class="grid grid-cols-3 gap-2">
+          <div>
+            <label class="block text-xs font-bold mb-1">類別</label>
+            <select id="edit-slot-category" class="sketch-input w-full text-xs font-bold">
+              <option value="景點">🗻 景點</option>
+              <option value="食">🍜 食</option>
+              <option value="宿">🏨 宿</option>
+              <option value="交通">🚃 交通</option>
+              <option value="購物">🛍️ 購物</option>
+              <option value="其他">✨ 其他</option>
+              <option value="PASS">🎫 PASS</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold mb-1">地區</label>
+            <input id="edit-slot-area" type="text" class="sketch-input w-full text-xs" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold mb-1">幣別</label>
+            <select id="edit-slot-currency" class="sketch-input w-full text-xs font-bold">
+              <option value="JPY">JPY 日元</option>
+              <option value="HKD">HKD 港幣</option>
+              <option value="CNY">CNY 人民幣</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold mb-1">項目名稱 / 備註</label>
+          <input id="edit-slot-title" type="text" required class="sketch-input w-full text-sm font-bold" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold mb-1">地址 / 車站名稱 (用於 Google Maps 路線規劃)</label>
+          <input id="edit-slot-address" type="text" class="sketch-input w-full text-xs" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 p-2.5 rounded-xl bg-[#F4F9FF] border border-[#3B332B]">
+          <div>
+            <label class="block text-[11px] font-bold text-[#084C7F]">預計單價 - 大人</label>
+            <input id="edit-slot-adult-est" type="number" min="0" step="any" class="sketch-input w-full text-xs mt-1" />
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-[#084C7F]">預計單價 - 小童</label>
+            <input id="edit-slot-child-est" type="number" min="0" step="any" class="sketch-input w-full text-xs mt-1" />
+          </div>
+        </div>
+
+        <!-- 功能 4：實際花費輸入 (分大人及小童) -->
+        <div class="grid grid-cols-2 gap-3 p-2.5 rounded-xl bg-[#FFF0F3] border-2 border-[#3B332B]">
+          <div>
+            <label class="block text-[11px] font-black text-[#8A1538]"><i class="fa-solid fa-receipt mr-1"></i>實際花費 - 大人 (單價)</label>
+            <input id="edit-slot-adult-act" type="number" min="0" step="any" placeholder="未填則預設同預計" class="sketch-input w-full text-xs mt-1" />
+          </div>
+          <div>
+            <label class="block text-[11px] font-black text-[#8A1538]"><i class="fa-solid fa-receipt mr-1"></i>實際花費 - 小童 (單價)</label>
+            <input id="edit-slot-child-act" type="number" min="0" step="any" placeholder="未填則預設同預計" class="sketch-input w-full text-xs mt-1" />
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="closeModal('slot-edit-modal')" class="sketch-btn bg-gray-100 px-4 py-1.5 text-xs">取消</button>
+          <button type="submit" class="sketch-btn bg-[#88C999] px-5 py-1.5 text-xs">儲存並同步</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 2. Google Maps 路線預覽與導航視窗 (功能 3) -->
+  <div id="gmaps-modal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4 no-print">
+    <div class="sketch-box bg-white max-w-2xl w-full p-5 relative">
+      <button onclick="closeModal('gmaps-modal')" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-rose-100 border-2 border-[#3B332B] font-black">✕</button>
+      <h3 class="text-lg font-black mb-2 flex items-center gap-2 text-[#084C7F]">
+        <i class="fa-solid fa-train-subway text-sky-500"></i> Google Maps 地鐵 / 都營大眾運輸路線規劃
+      </h3>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3 bg-[#E3F3FF] p-3 rounded-xl border border-[#3B332B]">
+        <div>
+          <label class="block text-[11px] font-bold text-[#084C7F]">起點 (目前方格地址)</label>
+          <input id="gmaps-origin" type="text" class="sketch-input w-full text-xs mt-1 font-bold" />
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-[#084C7F]">終點 (下一個方格地址)</label>
+          <input id="gmaps-dest" type="text" class="sketch-input w-full text-xs mt-1 font-bold" />
+        </div>
+      </div>
+
+      <!-- 即時嵌入式地圖預覽 -->
+      <div class="w-full h-64 rounded-xl overflow-hidden border-2 border-[#3B332B] mb-3 bg-gray-100">
+        <iframe id="gmaps-iframe" class="w-full h-full border-0" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <button onclick="refreshGmapsPreview()" class="sketch-btn bg-[#FFF4CC] px-3 py-1.5 text-xs">
+          <i class="fa-solid fa-rotate mr-1"></i>更新預覽地圖
+        </button>
+        <a id="gmaps-external-link" href="#" target="_blank" rel="noopener noreferrer" class="sketch-btn bg-[#7CC6FE] hover:bg-[#5BB7FD] px-4 py-2 text-xs sm:text-sm flex items-center gap-2">
+          <i class="fa-solid fa-arrow-up-right-from-square"></i> 開啟 Google Maps 地鐵/都營即時路線
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. 路線圖全螢幕高清放大檢視器 (功能 6) -->
+  <div id="lightbox-modal" class="fixed inset-0 bg-black/85 z-50 hidden flex-col items-center justify-center p-4 no-print">
+    <div class="w-full max-w-5xl flex items-center justify-between text-white mb-3">
+      <h3 id="lightbox-title" class="text-lg font-black">PASS 路線圖高清檢視</h3>
+      <div class="flex items-center gap-2">
+        <button onclick="zoomLightbox(0.25)" class="px-3 py-1 bg-white/20 hover:bg-white/30 rounded-lg text-sm font-bold"><i class="fa-solid fa-magnifying-glass-plus"></i> 放大</button>
+        <button onclick="zoomLightbox(-0.25)" class="px-3 py-1 bg-white/20 hover:bg-white/30 rounded-lg text-sm font-bold"><i class="fa-solid fa-magnifying-glass-minus"></i> 縮小</button>
+        <button onclick="resetLightboxZoom()" class="px-3 py-1 bg-white/20 hover:bg-white/30 rounded-lg text-sm font-bold">100%</button>
+        <button onclick="closeModal('lightbox-modal')" class="px-3 py-1 bg-rose-500 hover:bg-rose-600 rounded-lg text-sm font-bold">關閉 ✕</button>
+      </div>
+    </div>
+    <div class="w-full max-w-5xl h-[80vh] overflow-auto bg-[#1E1E1E] rounded-2xl border-2 border-white/30 flex items-center justify-center p-4">
+      <img id="lightbox-img" src="" alt="PASS 路線圖" class="max-w-none transition-transform duration-150 origin-center rounded-lg shadow-2xl" />
+    </div>
+  </div>
+
+  <!-- 4. 歷史記錄管理視窗 (功能 5) -->
+  <div id="history-modal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4 no-print">
+    <div class="sketch-box bg-white max-w-2xl w-full p-5 relative">
+      <button onclick="closeModal('history-modal')" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-rose-100 border-2 border-[#3B332B] font-black">✕</button>
+      <h3 class="text-xl font-black mb-1 flex items-center gap-2">
+        <i class="fa-solid fa-clock-rotate-left text-sky-500"></i> 已儲存的旅遊行程記錄
+      </h3>
+      <p class="text-xs text-gray-500 mb-4">資料同步儲存於 IndexedDB 與 Firebase Realtime Database，可隨時翻閱載入或開新記錄。</p>
+
+      <div id="history-list-container" class="space-y-2.5 max-h-96 overflow-y-auto pr-1">
+        <!-- 動態列出歷史行程 -->
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. 輸出 PDF / 列印模式選擇視窗 (功能 5) -->
+  <div id="print-modal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4 no-print">
+    <div class="sketch-box bg-white max-w-lg w-full p-5 relative">
+      <button onclick="closeModal('print-modal')" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-rose-100 border-2 border-[#3B332B] font-black">✕</button>
+      <h3 class="text-xl font-black mb-2 flex items-center gap-2">
+        <i class="fa-solid fa-file-pdf text-rose-500"></i> 輸出 PDF / 行程表列印
+      </h3>
+      <p class="text-xs text-gray-600 mb-4">請選擇您需要的列印排版格式（在瀏覽器列印視窗中選擇「另存為 PDF」即可匯出 PDF 檔案）：</p>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <button onclick="executePrint('daily-landscape')" class="sketch-box-sm bg-[#E3F3FF] hover:bg-[#CDE9FF] p-4 text-left transition">
+          <div class="text-2xl mb-1">🗓️</div>
+          <div class="font-black text-sm text-[#084C7F]">模式 A：獨立每一天 (橫向)</div>
+          <p class="text-[11px] text-gray-600 mt-1">
+            每一天獨立成一頁橫向 A4 表格，完整列出時段、交通、住宿、景點與當日花費明細。
+          </p>
+        </button>
+
+        <button onclick="executePrint('summary-onepage')" class="sketch-box-sm bg-[#FFE6EA] hover:bg-[#FFD1D9] p-4 text-left transition">
+          <div class="text-2xl mb-1">📄</div>
+          <div class="font-black text-sm text-[#8A1538]">模式 B：單頁全行程總覽 (含時間與地點)</div>
+          <p class="text-[11px] text-gray-600 mt-1">
+            將整個行程濃縮於單一頁面，清晰列出每日的「住宿」以及實際行程的「時間、名稱與地點/地址」。
+          </p>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 專供列印與匯出 PDF 渲染的隱藏容器 -->
+  <div id="print-area" class="hidden"></div>
+
+  <!-- ================= Firebase SDK & 應用程式核心邏輯 ================= -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js";
+    import { getDatabase, ref, set, get, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+    // 使用者指定的 Firebase 設定
+    const firebaseConfig = {
+      apiKey: "AIzaSyDJmOzg_v9C902b4te51rX7lrtuNU2C1pA",
+      authDomain: "trip-27eb3.firebaseapp.com",
+      databaseURL: "https://trip-27eb3-default-rtdb.firebaseio.com",
+      projectId: "trip-27eb3",
+      storageBucket: "trip-27eb3.firebasestorage.app",
+      messagingSenderId: "1042356086133",
+      appId: "1:1042356086133:web:d11e1b6d781b7379c11f3c",
+      measurementId: "G-G6417WSWPG"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    try { getAnalytics(app); } catch (e) { /* 忽略本地環境分析限制 */ }
+    const db = getDatabase(app);
+
+    // ==================== IndexedDB 封裝層 (完全取代 localStorage) ====================
+    const IDB_NAME = 'KawaiiTravelPlannerDB';
+    const IDB_VERSION = 1;
+    const STORE_NAME = 'kv_store';
+
+    function openIDB() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(IDB_NAME, IDB_VERSION);
+        req.onupgradeneeded = (e) => {
+          const idb = e.target.result;
+          if (!idb.objectStoreNames.contains(STORE_NAME)) {
+            idb.createObjectStore(STORE_NAME);
+          }
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function idbSet(key, val) {
+      const idb = await openIDB();
+      return new Promise((resolve, reject) => {
+        const tx = idb.transaction(STORE_NAME, 'readwrite');
+        tx.objectStore(STORE_NAME).put(val, key);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    async function idbGet(key) {
+      const idb = await openIDB();
+      return new Promise((resolve, reject) => {
+        const tx = idb.transaction(STORE_NAME, 'readonly');
+        const req = tx.objectStore(STORE_NAME).get(key);
+        req.onsuccess = () => resolve(req.result !== undefined ? req.result : null);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function idbRemove(key) {
+      const idb = await openIDB();
+      return new Promise((resolve, reject) => {
+        const tx = idb.transaction(STORE_NAME, 'readwrite');
+        tx.objectStore(STORE_NAME).delete(key);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    // ==================== 雙重儲存 API (IndexedDB + Firebase Realtime Database) ====================
+    export async function saveData(path, data) {
+      await idbSet(path, data);
+      try {
+        const cleanData = JSON.parse(JSON.stringify(data));
+        await set(ref(db, path), cleanData);
+        updateSyncBadge('已同步雲端 & IndexedDB', true);
+      } catch (err) {
+        console.warn('Firebase 同步警告 (已安全儲存於 IndexedDB):', err);
+        updateSyncBadge('已存於本地 IndexedDB', true);
+      }
+    }
+
+    export async function loadData(path) {
+      try {
+        const snapshot = await get(ref(db, path));
+        if (snapshot.exists()) {
+          const val = snapshot.val();
+          await idbSet(path, val);
+          return val;
+        }
+      } catch (err) {
+        console.warn('Firebase 讀取改用 IndexedDB:', err);
+      }
+      return await idbGet(path);
+    }
+
+    export async function removeData(path) {
+      await idbRemove(path);
+      try {
+        await remove(ref(db, path));
+      } catch (err) {
+        console.warn('Firebase 刪除警告:', err);
+      }
+    }
+
+    function updateSyncBadge(text) {
+      const el = document.getElementById('sync-status-text');
+      if (el) el.textContent = text;
+    }
+
+    window.cloudStorage = { saveData, loadData, removeData, idbSet, idbGet };
+
+    // ==================== 預設 8 大日本交通 PASS 路線圖 SVG 生成器 ====================
+    function createPassIllustrationSVG(title, subtitle, primaryColor, accentColor, lines) {
+      const linesSvg = lines.map((l, idx) => {
+        const y = 62 + idx * 24;
+        return `
+          <line x1="28" y1="${y}" x2="332" y2="${y}" stroke="${l.color}" stroke-width="5" stroke-linecap="round"/>
+          <circle cx="55" cy="${y}" r="5" fill="#FFF" stroke="#3B332B" stroke-width="2"/>
+          <circle cx="180" cy="${y}" r="5" fill="#FFF" stroke="#3B332B" stroke-width="2"/>
+          <circle cx="305" cy="${y}" r="5" fill="#FFF" stroke="#3B332B" stroke-width="2"/>
+          <text x="68" y="${y - 6}" font-size="10" font-weight="bold" fill="#3B332B">${l.label}</text>
+        `;
+      }).join('');
+
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="360" height="200" viewBox="0 0 360 200">
+        <rect width="360" height="200" rx="14" fill="${primaryColor}"/>
+        <rect x="10" y="10" width="340" height="180" rx="10" fill="#FFFFFF" stroke="#3B332B" stroke-width="2.5"/>
+        <rect x="10" y="10" width="340" height="36" rx="8" fill="${accentColor}"/>
+        <text x="24" y="33" font-family="sans-serif" font-size="14" font-weight="900" fill="#3B332B">${title}</text>
+        <text x="336" y="32" text-anchor="end" font-family="sans-serif" font-size="10" font-weight="bold" fill="#3B332B">${subtitle}</text>
+        ${linesSvg}
+        <text x="180" y="182" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#666">點擊可放大檢視或上傳官方路線圖/PDF取代</text>
+      </svg>`;
+      return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+    }
+
+    const DEFAULT_PASSES = [
+      {
+        id: 'pass-jr-tokyo-1d',
+        name: 'JR東京一日券 (東京都市地區通票)',
+        price: '大人 760 日圓 / 小童 380 日圓',
+        valid: '東京都23區內所有 JR 普通列車（含快速）普通車自由席（如山手線、中央線、京濱東北線、總武線等）。',
+        invalid: '不可搭乘新幹線、特急列車、綠色車廂（Green Car）、東京Metro地鐵、都營地鐵及私鐵。',
+        imageUrl: createPassIllustrationSVG('JR 東京一日券', 'JR-EAST 23區內無限搭', '#D8F0FF', '#7CC6FE', [
+          { color: '#80C241', label: 'JR 山手線 (新宿・澀谷・東京・上野・秋葉原)' },
+          { color: '#F15A22', label: 'JR 中央線快速 (東京・四谷・新宿・中野)' },
+          { color: '#00B2E5', label: 'JR 京濱東北線 (品川・東京・上野・赤羽)' }
+        ])
+      },
+      {
+        id: 'pass-tokyo-metro-24h',
+        name: '東京Metro地鐵 24小時車票',
+        price: '大人 600 日圓 / 小童 300 日圓 (旅客版 800 日圓)',
+        valid: '東京 Metro 地鐵全 9 條路線（銀座線、丸之內線、日比谷線、東西線、千代田線、有樂町線、半藏門線、南北線、副都心線），自首次刷卡起連續 24 小時無限搭乘。',
+        invalid: '不適用都營地下鐵（大江戶線、淺草線等）、JR 路線、百合海鷗號及私鐵。',
+        imageUrl: createPassIllustrationSVG('東京Metro地鐵 24小時券', '全9線 24H 無限乘車', '#E3F3FF', '#38BDF8', [
+          { color: '#FF9500', label: '銀座線 (淺草・上野・銀座・表參道・澀谷)' },
+          { color: '#F62E36', label: '丸之內線 (池袋・東京・銀座・新宿)' },
+          { color: '#9CAEB7', label: '日比谷線 (上野・秋葉原・築地・六本木)' }
+        ])
+      },
+      {
+        id: 'pass-toei-1d',
+        name: '都營地鐵一日乘車券',
+        price: '大人 700 日圓 / 小童 350 日圓',
+        valid: '都營地下鐵全 4 條路線（淺草線、三田線、新宿線、大江戶線）當日首班車至末班車無限次搭乘。',
+        invalid: '不適用東京 Metro 地鐵 9 線、JR 線、都電荒川線（需買都營通票）及私鐵。',
+        imageUrl: createPassIllustrationSVG('都營地鐵一日乘車券', '都營4線 當日無限搭', '#E5F6E9', '#88C999', [
+          { color: '#EC6E65', label: '都營淺草線 (押上・淺草・日本橋・新橋・大門)' },
+          { color: '#B6007A', label: '都營大江戶線 (新宿西口・六本木・築地市場)' },
+          { color: '#6CBB5A', label: '都營新宿線 (新宿・神保町・馬喰橫山)' }
+        ])
+      },
+      {
+        id: 'pass-tokyo-free-1d',
+        name: '東京自由一日券 (Tokyo Free Kippu)',
+        price: '大人 1,600 日圓 / 小童 800 日圓',
+        valid: '一票暢行「東京Metro地鐵全9線」＋「都營地鐵全4線」＋「都營巴士・都電荒川線・日暮里舍人線」＋「JR東京都23區內普通列車」。',
+        invalid: '不可搭乘新幹線、JR 特急列車、私鐵（小田急、京王、東急、西武、京成等）及機場利木津巴士。',
+        imageUrl: createPassIllustrationSVG('東京自由一日券', 'JR23區+Metro+都營全包', '#FFF6DC', '#FFD97D', [
+          { color: '#80C241', label: 'JR 東京都23區內全線 (山手線等)' },
+          { color: '#00A7DB', label: '東京 Metro 地鐵全 9 條路線' },
+          { color: '#E85298', label: '都營地鐵 4 線 + 都營巴士 + 荒川線' }
+        ])
+      },
+      {
+        id: 'pass-gtp',
+        name: 'Greater Tokyo Pass（GTP）',
+        price: '5日券：大人 6,500 日圓 / 小童 3,250 日圓',
+        valid: '關東地區 13 家私鐵（小田急、京王、京成、京急、西武、相鐵、東急、東武、東京Metro、都營地鐵、橫濱市營地鐵等）及 34 家一般巴士路線連續 5 日無限搭乘（含成田/羽田私鐵進出）。',
+        invalid: '完全不適用 JR 路線（含山手線、成田特快 N’EX）、有料特急列車（如 Skyliner、浪漫特快需另購特急券）。',
+        imageUrl: createPassIllustrationSVG('Greater Tokyo Pass', '關東13家私鐵+巴士 5日券', '#FFE6EA', '#FF9EAA', [
+          { color: '#005BAC', label: '成田/羽田機場線 (京成電鐵・京急電鐵)' },
+          { color: '#E60012', label: '東京地下鐵全線 + 都營地鐵全線' },
+          { color: '#009944', label: '小田急・東急・西武・東武・京王・橫濱地鐵' }
+        ])
+      },
+      {
+        id: 'pass-have-fun-tokyo',
+        name: '東京樂享周遊券 (Have Fun in Tokyo Pass)',
+        price: '3設施券約 3,200~4,500 日圓 (視匯率與套餐)',
+        valid: '一週內任選 3 項東京人氣設施或交通美食體驗（如：SHIBUYA SKY、東京鐵塔瞭望台、豐洲 teamLab、利木津巴士券、地鐵券、燒肉/拉麵抵用券等）。',
+        invalid: '並非無限次交通卡，僅限兌換指定設施門票或一次性交通兌換券，不可直接刷卡進出地鐵閘門。',
+        imageUrl: createPassIllustrationSVG('東京樂享周遊券', 'Have Fun in Tokyo 任選3設施', '#F3E8FF', '#C3B1E1', [
+          { color: '#9333EA', label: '展望台景點：SHIBUYA SKY / 東京鐵塔 / 晴空塔' },
+          { color: '#EC4899', label: '沉浸藝術：teamLab Planets / 摩天輪 / 遊船' },
+          { color: '#F59E0B', label: '交通美食：利木津巴士 / 地鐵券 / 餐廳優惠券' }
+        ])
+      },
+      {
+        id: 'pass-jr-whole-japan',
+        name: 'Japan Rail Pass (全日本鐵路通票)',
+        price: '7日券：大人 50,000 日圓 / 小童 25,000 日圓',
+        valid: '全日本 JR 集團 6 家公司（北海道、東日本、東海、西日本、四國、九州）之新幹線（含希望號 Nozomi 需加購專用券）、特急、急行、快速、普通列車及 JR 巴士、宮島渡輪。',
+        invalid: '不適用所有私鐵、地鐵（東京Metro/都營/大阪地鐵等）及非 JR 營運之公路巴士。',
+        imageUrl: createPassIllustrationSVG('Japan Rail Pass', '全日本 JR 新幹線・特急通票', '#E5F6E9', '#4ADE80', [
+          { color: '#16A34A', label: '東海道・山陽・九州新幹線 (東京-名古屋-京都-大阪-博多)' },
+          { color: '#0284C7', label: '東北・北海道・北陸新幹線 (東京-仙台-新函館-金澤)' },
+          { color: '#EA580C', label: '全國 JR 特急・快速・在來線 & JR 宮島渡輪' }
+        ])
+      },
+      {
+        id: 'pass-jr-tokyo-wide',
+        name: 'JR東京廣域周遊券 (JR TOKYO Wide Pass)',
+        price: '連續3日：大人 15,000 日圓 / 小童 7,500 日圓',
+        valid: '連續 3 日無限搭乘東京及關東近郊 JR 新幹線與特急指定席，包含：富士山河口湖（富士回遊）、輕井澤、日光、GALA湯澤、伊豆熱海、成田特快 N’EX。',
+        invalid: '不可搭乘東海道新幹線（東京往名古屋/大阪方向）及東京市區地下鐵（Metro / 都營）。',
+        imageUrl: createPassIllustrationSVG('JR東京廣域周遊券', '連續3日 富士山・輕井澤・日光', '#FFF1E6', '#FFB07C', [
+          { color: '#2563EB', label: '中央線・富士急行線 (新宿 ➔ 富士山・河口湖)' },
+          { color: '#DC2626', label: '北陸・上越新幹線 (東京 ➔ 輕井澤・GALA湯澤)' },
+          { color: '#059669', label: '東北新幹線・日光線・成田特快 N’EX・伊豆踊子號' }
+        ])
+      }
+    ];
+
+    // ==================== 全域應用程式狀態 ====================
+    const todayStr = new Date().toISOString().split('T')[0];
+    const defaultEndDate = new Date(Date.now() + 3 * 86400000).toISOString().split('T')[0];
+
+    let appState = {
+      tripId: 'trip_' + Date.now(),
+      title: '東京富士山 5 日開心手繪之旅',
+      startDate: todayStr,
+      endDate: defaultEndDate,
+      adults: 2,
+      children: 1,
+      startTime: '00:00',
+      endTime: '23:59',
+      interval: 30,
+      rates: {
+        HKD: 1,
+        JPY: 0.052,
+        CNY: 1.08,
+        updatedDate: todayStr
+      },
+      activeDay: 1,
+      poolFilter: 'ALL',
+      cards: [
+        {
+          id: 'c_demo_1',
+          category: '交通',
+          area: '成田機場→市區',
+          title: '京成電鐵 Skyliner 特急',
+          adultPrice: 2570,
+          childPrice: 1290,
+          currency: 'JPY',
+          address: '成田空港駅'
+        },
+        {
+          id: 'c_demo_2',
+          category: '宿',
+          area: '新宿',
+          title: '新宿格拉斯麗哥吉拉飯店 (每晚)',
+          adultPrice: 12000,
+          childPrice: 0,
+          currency: 'JPY',
+          address: '東京都新宿区歌舞伎町1-19-1'
+        },
+        {
+          id: 'c_demo_3',
+          category: '景點',
+          area: '淺草',
+          title: '淺草寺雷門與仲見世通散步',
+          adultPrice: 0,
+          childPrice: 0,
+          currency: 'JPY',
+          address: '東京都台東区浅草2-3-1'
+        },
+        {
+          id: 'c_demo_4',
+          category: '食',
+          area: '新宿',
+          title: '一蘭拉麵 新宿中央東口店',
+          adultPrice: 1480,
+          childPrice: 980,
+          currency: 'JPY',
+          address: '東京都新宿区新宿3-34-11'
+        },
+        {
+          id: 'c_demo_5',
+          category: '購物',
+          area: '澀谷',
+          title: 'SHIBUYA SKY 展望台 & 澀谷購物',
+          adultPrice: 2500,
+          childPrice: 1200,
+          currency: 'JPY',
+          address: '東京都渋谷区渋谷2-24-12'
+        }
+      ],
+      schedule: {
+        1: {
+          '09:00': {
+            cardId: 'c_demo_1',
+            category: '交通',
+            area: '成田機場→市區',
+            title: '京成電鐵 Skyliner 特急',
+            adultPrice: 2570,
+            childPrice: 1290,
+            currency: 'JPY',
+            address: '成田空港駅',
+            actualAdult: null,
+            actualChild: null
+          },
+          '10:30': {
+            cardId: 'c_demo_3',
+            category: '景點',
+            area: '淺草',
+            title: '淺草寺雷門與仲見世通散步',
+            adultPrice: 0,
+            childPrice: 0,
+            currency: 'JPY',
+            address: '東京都台東区浅草2-3-1',
+            actualAdult: null,
+            actualChild: null
+          },
+          '12:30': {
+            cardId: 'c_demo_4',
+            category: '食',
+            area: '新宿',
+            title: '一蘭拉麵 新宿中央東口店',
+            adultPrice: 1480,
+            childPrice: 980,
+            currency: 'JPY',
+            address: '東京都新宿区新宿3-34-11',
+            actualAdult: null,
+            actualChild: null
+          },
+          '15:00': {
+            cardId: 'c_demo_2',
+            category: '宿',
+            area: '新宿',
+            title: '新宿格拉斯麗哥吉拉飯店 (每晚)',
+            adultPrice: 12000,
+            childPrice: 0,
+            currency: 'JPY',
+            address: '東京都新宿区歌舞伎町1-19-1',
+            actualAdult: null,
+            actualChild: null
+          }
+        }
+      },
+      extraExpenses: [
+        { id: 'ex_1', name: 'Suica 西瓜卡預先儲值', amount: 3000, currency: 'JPY' }
+      ],
+      passes: JSON.parse(JSON.stringify(DEFAULT_PASSES))
+    };
+
+    let clipboardSlot = null;
+    let draggedPayload = null;
+    let lightboxScale = 1;
+
+    // ==================== 提示訊息 Toast ====================
+    function showToast(msg, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const colors = {
+        success: 'bg-[#E5F6E9] border-[#3B332B] text-[#155E2B]',
+        warn: 'bg-[#FFF4CC] border-[#3B332B] text-[#6B5300]',
+        error: 'bg-[#FFE6EA] border-[#3B332B] text-[#8A1538]',
+        info: 'bg-[#E3F3FF] border-[#3B332B] text-[#084C7F]'
+      };
+      const div = document.createElement('div');
+      div.className = `sketch-box-sm px-4 py-2.5 text-xs sm:text-sm font-bold flex items-center gap-2 pointer-events-auto transition-all duration-300 ${colors[type] || colors.info}`;
+      div.innerHTML = `<i class="fa-solid fa-sparkles"></i><span>${msg}</span>`;
+      container.appendChild(div);
+      setTimeout(() => {
+        div.style.opacity = '0';
+        div.style.transform = 'translateX(20px)';
+        setTimeout(() => div.remove(), 300);
+      }, 3200);
+    }
+    window.showToast = showToast;
+
+    // ==================== 日期與時間軸工具函式 ====================
+    function getTripDays() {
+      const start = new Date(appState.startDate + 'T00:00:00');
+      const end = new Date(appState.endDate + 'T00:00:00');
+      if (isNaN(start) || isNaN(end) || end < start) return [{ day: 1, dateStr: appState.startDate, weekday: '日' }];
+      const days = [];
+      const diff = Math.min(30, Math.round((end - start) / 86400000) + 1);
+      for (let i = 0; i < diff; i++) {
+        const d = new Date(start.getTime() + i * 86400000);
+        days.push({
+          day: i + 1,
+          dateStr: d.toISOString().split('T')[0],
+          weekday: ['日', '一', '二', '三', '四', '五', '六'][d.getDay()]
+        });
+      }
+      return days;
+    }
+
+    function generateTimeSlots() {
+      const [sh, sm] = appState.startTime.split(':').map(Number);
+      const [eh, em] = appState.endTime.split(':').map(Number);
+      const startMins = (sh || 0) * 60 + (sm || 0);
+      const endMins = (eh === 23 && em === 59) ? 1439 : ((eh || 23) * 60 + (em || 59));
+      const step = Number(appState.interval) || 30;
+      const slots = [];
+      for (let m = startMins; m <= endMins; m += step) {
+        const hh = String(Math.floor(m / 60)).padStart(2, '0');
+        const mm = String(m % 60).padStart(2, '0');
+        slots.push(`${hh}:${mm}`);
+      }
+      return slots;
+    }
+
+    function toHKD(amount, currency) {
+      const rate = appState.rates[currency] || 1;
+      return (Number(amount) || 0) * rate;
+    }
+
+    function fromHKD(hkdAmount, targetCurrency) {
+      const rate = appState.rates[targetCurrency] || 1;
+      return rate === 0 ? 0 : hkdAmount / rate;
+    }
+
+    function formatMoney(num) {
+      return Math.round(num).toLocaleString('zh-HK');
+    }
+
+    function isSameEvent(a, b) {
+      if (!a || !b) return false;
+      if (a.cardId && b.cardId && a.cardId === b.cardId) return true;
+      return a.title === b.title && a.category === b.category && Number(a.adultPrice) === Number(b.adultPrice);
+    }
+
+    // ==================== 費用計算引擎 (含連續合併去重計費) ====================
+    function calculateAllBudgets() {
+      const days = getTripDays();
+      const slots = generateTimeSlots();
+      const adults = Number(appState.adults) || 0;
+      const children = Number(appState.children) || 0;
+
+      let totalBudgetHKD = 0;
+      let totalActualHKD = 0;
+      let transportHKD = 0;
+      let hotelHKD = 0;
+      const dailySummaries = [];
+
+      days.forEach(dObj => {
+        const daySchedule = appState.schedule[dObj.day] || {};
+        let dayEstHKD = 0;
+        let dayActHKD = 0;
+
+        for (let i = 0; i < slots.length; i++) {
+          const t = slots[i];
+          const item = daySchedule[t];
+          if (!item) continue;
+
+          const prevSlot = i > 0 ? slots[i - 1] : null;
+          const prevItem = prevSlot ? daySchedule[prevSlot] : null;
+          if (prevItem && isSameEvent(prevItem, item)) {
+            continue;
+          }
+
+          const estCostOrig = (Number(item.adultPrice) || 0) * adults + (Number(item.childPrice) || 0) * children;
+          const estHKD = toHKD(estCostOrig, item.currency);
+
+          const actAdultUnit = (item.actualAdult !== null && item.actualAdult !== undefined && item.actualAdult !== '')
+            ? Number(item.actualAdult) : (Number(item.adultPrice) || 0);
+          const actChildUnit = (item.actualChild !== null && item.actualChild !== undefined && item.actualChild !== '')
+            ? Number(item.actualChild) : (Number(item.childPrice) || 0);
+          const actCostOrig = actAdultUnit * adults + actChildUnit * children;
+          const actHKD = toHKD(actCostOrig, item.currency);
+
+          dayEstHKD += estHKD;
+          dayActHKD += actHKD;
+
+          if (item.category === '交通' || item.category === 'PASS') transportHKD += estHKD;
+          if (item.category === '宿') hotelHKD += estHKD;
+        }
+
+        totalBudgetHKD += dayEstHKD;
+        totalActualHKD += dayActHKD;
+        dailySummaries.push({
+          day: dObj.day,
+          dateStr: dObj.dateStr,
+          estHKD: dayEstHKD,
+          actHKD: dayActHKD
+        });
+      });
+
+      let extraHKD = 0;
+      (appState.extraExpenses || []).forEach(ex => {
+        extraHKD += toHKD(ex.amount, ex.currency);
+      });
+      totalActualHKD += extraHKD;
+
+      return {
+        totalBudgetHKD,
+        totalActualHKD,
+        transportHKD,
+        hotelHKD,
+        extraHKD,
+        dailySummaries
+      };
+    }
+
+    // ==================== 畫面渲染主函式 ====================
+    function renderAll() {
+      syncInputsFromState();
+      renderBudgets();
+      renderCardPool();
+      renderExtraExpenses();
+      renderDayTabs();
+      renderSchedule();
+      renderPassCards();
+      refreshHistoryCount();
+    }
+    window.renderAll = renderAll;
+
+    function syncInputsFromState() {
+      document.getElementById('trip-title').value = appState.title;
+      document.getElementById('trip-start-date').value = appState.startDate;
+      document.getElementById('trip-end-date').value = appState.endDate;
+      document.getElementById('trip-adults').value = appState.adults;
+      document.getElementById('trip-children').value = appState.children;
+      document.getElementById('trip-interval').value = appState.interval;
+      document.getElementById('trip-start-time').value = appState.startTime;
+      document.getElementById('trip-end-time').value = appState.endTime;
+      document.getElementById('rate-JPY').value = appState.rates.JPY;
+      document.getElementById('rate-CNY').value = appState.rates.CNY;
+      document.getElementById('rate-date-tag').textContent = appState.rates.updatedDate || todayStr;
+    }
+
+    function renderBudgets() {
+      const stats = calculateAllBudgets();
+      const dispCur = document.getElementById('display-currency').value || 'HKD';
+
+      document.getElementById('total-budget-hkd').textContent = formatMoney(stats.totalBudgetHKD);
+      document.getElementById('total-actual-hkd').textContent = formatMoney(stats.totalActualHKD);
+      document.getElementById('cat-transport-hkd').textContent = formatMoney(stats.transportHKD);
+      document.getElementById('cat-hotel-hkd').textContent = formatMoney(stats.hotelHKD);
+
+      const pillsContainer = document.getElementById('daily-budget-pills');
+      pillsContainer.innerHTML = stats.dailySummaries.map(d => {
+        const convertedVal = fromHKD(d.estHKD, dispCur);
+        return `
+          <button onclick="selectActiveDay(${d.day})" class="px-2.5 py-1 rounded-xl border border-[#3B332B] text-xs font-bold transition ${appState.activeDay === d.day ? 'bg-[#FFD97D]' : 'bg-[#FFFDF7] hover:bg-[#FFF4CC]'}">
+            Day ${d.day}: <span class="text-rose-700">${dispCur} ${formatMoney(convertedVal)}</span>
+            <span class="text-[10px] text-gray-500">(HK$${formatMoney(d.estHKD)})</span>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function getUsedCardIds() {
+      const used = new Set();
+      Object.values(appState.schedule || {}).forEach(dayObj => {
+        Object.values(dayObj || {}).forEach(slot => {
+          if (slot && slot.cardId) used.add(slot.cardId);
+        });
+      });
+      return used;
+    }
+
+    function renderCardPool() {
+      const container = document.getElementById('card-pool-list');
+      const usedIds = getUsedCardIds();
+      const filtered = appState.cards.filter(c => {
+        if (appState.poolFilter === 'ALL') return true;
+        if (appState.poolFilter === '交通') return c.category === '交通' || c.category === 'PASS';
+        return c.category === appState.poolFilter;
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="col-span-2 text-center py-8 text-xs text-gray-400 font-bold border-2 border-dashed border-gray-200 rounded-xl">此類別暫無方格，請從上方新增或上傳 Excel 匯入！</div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(card => {
+        const isUsed = usedIds.has(card.id);
+        const catClass = `cat-${card.category}`;
+        return `
+          <div draggable="true"
+               ondragstart="handleDragStartCard(event, '${card.id}')"
+               class="sketch-box-sm p-2.5 cursor-grab active:cursor-grabbing relative group transition ${isUsed ? 'card-used' : catClass}">
+            <div class="flex items-start justify-between gap-1 mb-1">
+              <div class="flex flex-wrap items-center gap-1">
+                <span class="px-1.5 py-0.5 text-[10px] font-black rounded bg-white/80 border border-[#3B332B]">${card.category}</span>
+                ${card.area ? `<span class="text-[10px] font-bold opacity-80">📍${card.area}</span>` : ''}
+                ${isUsed ? `<span class="px-1.5 py-0.5 text-[10px] font-black rounded bg-gray-600 text-white">已使用</span>` : ''}
+              </div>
+              <div class="flex items-center gap-1">
+                <button onclick="quickAssignCardToNextSlot('${card.id}')" title="一鍵排入目前時間表空檔" class="w-6 h-6 rounded-lg bg-white border border-[#3B332B] text-[10px] hover:bg-amber-200 flex items-center justify-center">
+                  <i class="fa-solid fa-arrow-right"></i>
+                </button>
+                <button onclick="deletePoolCard('${card.id}')" title="刪除方格" class="w-6 h-6 rounded-lg bg-white border border-[#3B332B] text-[10px] text-rose-600 hover:bg-rose-100 flex items-center justify-center">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </div>
+            </div>
+
+            <input type="text" value="${escapeHtml(card.title)}"
+                   onchange="updateCardTitleSync('${card.id}', this.value)"
+                   class="w-full font-black text-xs bg-white/60 focus:bg-white px-1.5 py-0.5 rounded border border-transparent focus:border-[#3B332B] mb-1" />
+
+            <div class="flex items-center justify-between text-[11px] font-bold">
+              <span>大:${card.currency} ${card.adultPrice} / 童:${card.childPrice}</span>
+              <span class="text-[10px] opacity-75">HK$${formatMoney(toHKD(Number(card.adultPrice)*appState.adults + Number(card.childPrice)*appState.children, card.currency))}</span>
+            </div>
+            ${card.address ? `<div class="text-[10px] truncate opacity-75 mt-0.5"><i class="fa-solid fa-map-pin mr-0.5"></i>${escapeHtml(card.address)}</div>` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderExtraExpenses() {
+      const container = document.getElementById('extra-expenses-list');
+      if (!appState.extraExpenses || appState.extraExpenses.length === 0) {
+        container.innerHTML = `<div class="text-xs text-gray-400 text-center py-2">尚無額外支出項目</div>`;
+        return;
+      }
+      container.innerHTML = appState.extraExpenses.map(ex => `
+        <div class="flex items-center justify-between bg-[#FFFDF5] px-2.5 py-1.5 rounded-xl border border-[#3B332B] text-xs">
+          <span class="font-bold truncate pr-2">${escapeHtml(ex.name)}</span>
+          <div class="flex items-center gap-2 shrink-0">
+            <span class="font-black text-[#8A1538]">${ex.currency} ${formatMoney(ex.amount)} <span class="text-[10px] text-gray-500">(HK$${formatMoney(toHKD(ex.amount, ex.currency))})</span></span>
+            <button onclick="deleteExtraExpense('${ex.id}')" class="text-rose-600 hover:text-rose-800"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderDayTabs() {
+      const days = getTripDays();
+      if (appState.activeDay !== 'ALL' && appState.activeDay > days.length) {
+        appState.activeDay = 1;
+      }
+      const tabsContainer = document.getElementById('day-selector-tabs');
+      let html = days.map(d => {
+        const active = appState.activeDay === d.day;
+        return `
+          <button onclick="selectActiveDay(${d.day})"
+                  class="sketch-btn px-3 py-1.5 text-xs ${active ? 'bg-[#88C999] text-[#3B332B]' : 'bg-[#FFFDF7] hover:bg-[#E5F6E9]'}">
+            Day ${d.day} <span class="text-[10px] opacity-80">(${d.dateStr.slice(5)} 週${d.weekday})</span>
+          </button>
+        `;
+      }).join('');
+
+      html += `
+        <button onclick="selectActiveDay('ALL')"
+                class="sketch-btn px-3 py-1.5 text-xs ${appState.activeDay === 'ALL' ? 'bg-[#7CC6FE] text-[#3B332B]' : 'bg-[#FFFDF7] hover:bg-[#E3F3FF]'}">
+          <i class="fa-solid fa-table-columns mr-1"></i>整個時段總覽
+        </button>
+      `;
+      tabsContainer.innerHTML = html;
+
+      const mergeBtn = document.getElementById('merge-day-btn');
+      if (mergeBtn) mergeBtn.style.display = appState.activeDay === 'ALL' ? 'none' : 'inline-flex';
+    }
+
+    function renderSchedule() {
+      const container = document.getElementById('schedule-container');
+      const infoBar = document.getElementById('schedule-header-info');
+      const days = getTripDays();
+      const slots = generateTimeSlots();
+
+      if (appState.activeDay === 'ALL') {
+        infoBar.innerHTML = `
+          <div class="font-black text-[#084C7F]"><i class="fa-solid fa-calendar-week mr-1"></i>全行程時段總覽模式（共 ${days.length} 天）</div>
+          <div class="text-gray-600">點擊任意 Day 分頁可進行拖拉排程、複製貼上與一鍵整合</div>
+        `;
+
+        let tableHtml = `<div class="overflow-x-auto"><table class="w-full border-collapse text-xs">
+          <thead>
+            <tr class="bg-[#FFF4CC] border-2 border-[#3B332B]">
+              <th class="p-2 border border-[#3B332B] w-16 sticky left-0 bg-[#FFF4CC] z-10">時間</th>
+              ${days.map(d => `<th class="p-2 border border-[#3B332B] min-w-[155px]">Day ${d.day}<br><span class="text-[10px] font-normal">${d.dateStr}</span></th>`).join('')}
+            </tr>
+          </thead>
+          <tbody>`;
+
+        slots.forEach(timeStr => {
+          tableHtml += `<tr>
+            <td class="p-1.5 border border-[#3B332B] font-black text-center bg-[#FFFDF7] sticky left-0 z-10">${timeStr}</td>`;
+          days.forEach(d => {
+            const item = (appState.schedule[d.day] || {})[timeStr];
+            if (!item) {
+              tableHtml += `<td onclick="selectActiveDay(${d.day})" class="p-1.5 border border-gray-300 text-center text-gray-300 hover:bg-amber-50 cursor-pointer">+</td>`;
+            } else {
+              const catClass = `cat-${item.category}`;
+              tableHtml += `
+                <td onclick="selectActiveDay(${d.day})" class="p-1.5 border border-[#3B332B] cursor-pointer ${catClass}">
+                  <div class="font-black truncate">${escapeHtml(item.title)}</div>
+                  <div class="text-[10px] opacity-80">${item.category}・${item.currency} ${Number(item.adultPrice)*appState.adults + Number(item.childPrice)*appState.children}</div>
+                </td>`;
+            }
+          });
+          tableHtml += `</tr>`;
+        });
+        tableHtml += `</tbody></table></div>`;
+        container.innerHTML = tableHtml;
+        return;
+      }
+
+      const dayNum = Number(appState.activeDay) || 1;
+      const dayMeta = days.find(d => d.day === dayNum) || days[0];
+      const daySchedule = appState.schedule[dayNum] || {};
+      const stats = calculateAllBudgets();
+      const dayStat = stats.dailySummaries.find(s => s.day === dayNum) || { estHKD: 0, actHKD: 0 };
+
+      const dayTransport = [];
+      const dayHotel = [];
+      slots.forEach((t, idx) => {
+        const it = daySchedule[t];
+        if (!it) return;
+        const prev = idx > 0 ? daySchedule[slots[idx - 1]] : null;
+        if (prev && isSameEvent(prev, it)) return;
+        if (it.category === '交通' || it.category === 'PASS') dayTransport.push(`${t} ${it.title}`);
+        if (it.category === '宿') dayHotel.push(`${it.title}`);
+      });
+
+      infoBar.innerHTML = `
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="font-black text-sm text-[#155E2B]">📅 Day ${dayNum} (${dayMeta.dateStr} 週${dayMeta.weekday})</span>
+          <span class="px-2 py-0.5 rounded bg-white border border-[#3B332B] font-bold">預計: HK$${formatMoney(dayStat.estHKD)}</span>
+          <span class="px-2 py-0.5 rounded bg-[#FFE6EA] border border-[#3B332B] font-bold text-[#8A1538]">實際: HK$${formatMoney(dayStat.actHKD)}</span>
+        </div>
+        <div class="flex flex-wrap items-center gap-2 text-[11px]">
+          <span class="px-2 py-0.5 rounded bg-[#D8F0FF] border border-[#3B332B] font-bold text-[#084C7F]">
+            <i class="fa-solid fa-train mr-1"></i>交通: ${dayTransport.length ? dayTransport.join(' / ') : '未排程'}
+          </span>
+          <span class="px-2 py-0.5 rounded bg-[#E2D9F3] border border-[#3B332B] font-bold text-[#3D1E6D]">
+            <i class="fa-solid fa-hotel mr-1"></i>住宿: ${dayHotel.length ? dayHotel.join(' / ') : '未排程'}
+          </span>
+          ${clipboardSlot ? `<span class="px-2 py-0.5 rounded bg-amber-200 border border-[#3B332B] font-bold">📋 已複製: ${escapeHtml(clipboardSlot.title)}</span>` : ''}
+        </div>
+      `;
+
+      let rowsHtml = '';
+      let i = 0;
+      while (i < slots.length) {
+        const timeStr = slots[i];
+        const item = daySchedule[timeStr];
+
+        if (!item) {
+          rowsHtml += `
+            <div ondragover="handleDragOver(event)"
+                 ondragleave="handleDragLeave(event)"
+                 ondrop="handleDropOnSlot(event, ${dayNum}, '${timeStr}')"
+                 class="flex items-center gap-2 p-2 rounded-xl border-2 border-dashed border-[#D6CBB9] bg-[#FFFDF9] hover:bg-[#FFF9E6] transition min-h-[48px]">
+              <div class="w-14 text-xs font-black text-[#6E6054] shrink-0 text-center">${timeStr}</div>
+              <div class="flex-1 text-xs text-gray-400 flex items-center justify-between">
+                <span>拖拉左側行程方格至此，或點擊「貼上」</span>
+                ${clipboardSlot ? `
+                  <button onclick="pasteClipboardToSlot(${dayNum}, '${timeStr}')" class="sketch-btn bg-[#FFF4CC] px-2 py-0.5 text-[11px] text-[#3B332B]">
+                    <i class="fa-solid fa-paste mr-1"></i>貼上「${escapeHtml(clipboardSlot.title)}」
+                  </button>` : ''}
+              </div>
+            </div>
+          `;
+          i++;
+        } else {
+          let spanCount = 1;
+          while (i + spanCount < slots.length && isSameEvent(item, daySchedule[slots[i + spanCount]])) {
+            spanCount++;
+          }
+          const endTimeLabel = (i + spanCount < slots.length) ? slots[i + spanCount] : '結束';
+          const nextSlotAfterBlock = (i + spanCount < slots.length) ? slots[i + spanCount] : null;
+
+          let nextAddress = '';
+          for (let k = i + spanCount; k < slots.length; k++) {
+            const candidate = daySchedule[slots[k]];
+            if (candidate && candidate.address) {
+              nextAddress = candidate.address;
+              break;
+            }
+          }
+
+          const catClass = `cat-${item.category}`;
+          const totalEstOrig = (Number(item.adultPrice) || 0) * appState.adults + (Number(item.childPrice) || 0) * appState.children;
+          const totalEstHKD = toHKD(totalEstOrig, item.currency);
+
+          const hasActual = (item.actualAdult !== null && item.actualAdult !== undefined && item.actualAdult !== '') ||
+                            (item.actualChild !== null && item.actualChild !== undefined && item.actualChild !== '');
+          const actAdult = (item.actualAdult !== null && item.actualAdult !== undefined && item.actualAdult !== '') ? Number(item.actualAdult) : Number(item.adultPrice);
+          const actChild = (item.actualChild !== null && item.actualChild !== undefined && item.actualChild !== '') ? Number(item.actualChild) : Number(item.childPrice);
+          const totalActOrig = actAdult * appState.adults + actChild * appState.children;
+          const totalActHKD = toHKD(totalActOrig, item.currency);
+
+          rowsHtml += `
+            <div draggable="true"
+                 ondragstart="handleDragStartSlot(event, ${dayNum}, '${timeStr}')"
+                 ondragover="handleDragOver(event)"
+                 ondragleave="handleDragLeave(event)"
+                 ondrop="handleDropOnSlot(event, ${dayNum}, '${timeStr}')"
+                 style="min-height: ${Math.max(58, spanCount * 46)}px"
+                 class="sketch-box-sm p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 transition ${catClass}">
+              <div class="flex items-start sm:items-center gap-2.5 flex-1 min-w-0">
+                <div class="bg-white/90 border border-[#3B332B] rounded-lg px-2 py-1 text-center shrink-0">
+                  <div class="text-xs font-black">${timeStr}</div>
+                  ${spanCount > 1 ? `<div class="text-[10px] font-bold text-rose-600">⬇ ${endTimeLabel}<br>(合併${spanCount}格)</div>` : ''}
+                </div>
+
+                <div class="min-w-0 flex-1">
+                  <div class="flex flex-wrap items-center gap-1.5 mb-0.5">
+                    <span class="px-1.5 py-0.2 text-[10px] font-black rounded bg-white border border-[#3B332B]">${item.category}</span>
+                    ${item.area ? `<span class="text-[11px] font-bold">📍${escapeHtml(item.area)}</span>` : ''}
+                    ${spanCount > 1 ? `<span class="px-1.5 py-0.2 text-[10px] font-bold rounded bg-amber-300 border border-[#3B332B]">連續合併・費用僅計1次</span>` : ''}
+                  </div>
+
+                  <input type="text" value="${escapeHtml(item.title)}"
+                         onchange="updateSlotTitleSync(${dayNum}, '${timeStr}', ${spanCount}, this.value)"
+                         class="w-full font-black text-sm bg-white/60 focus:bg-white px-1.5 py-0.5 rounded border border-transparent focus:border-[#3B332B]" />
+
+                  <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-bold mt-1">
+                    <span>預計: ${item.currency} ${formatMoney(totalEstOrig)} (HK$${formatMoney(totalEstHKD)})</span>
+                    <span class="${hasActual ? 'text-rose-700 underline' : 'opacity-75'}">
+                      實際: ${item.currency} ${formatMoney(totalActOrig)} (HK$${formatMoney(totalActHKD)})
+                    </span>
+                    ${item.address ? `
+                      <button onclick="openGoogleMapsRoute('${escapeJs(item.address)}', '${escapeJs(nextAddress)}')"
+                              class="px-2 py-0.5 rounded-full bg-white hover:bg-sky-100 border border-[#3B332B] text-[#084C7F] flex items-center gap-1 shadow-sm"
+                              title="自動導入此地址與下一站地址至 Google Maps 規劃地鐵/都營路線">
+                        <i class="fa-solid fa-route text-sky-600"></i> ${escapeHtml(item.address)} ➔ 導航
+                      </button>` : ''}
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-1 shrink-0 self-end sm:self-center">
+                <button onclick="openSlotEditModal(${dayNum}, '${timeStr}')" title="編輯內容與輸入實際花費(大人/小童)"
+                        class="sketch-btn bg-white hover:bg-amber-100 px-2 py-1 text-xs">
+                  <i class="fa-solid fa-coins text-amber-600"></i> 實際/編輯
+                </button>
+
+                <button onclick="copySlotItem(${dayNum}, '${timeStr}')" title="複製此格內容"
+                        class="sketch-btn bg-[#E3F3FF] hover:bg-[#C7E7FF] px-2 py-1 text-xs">
+                  <i class="fa-solid fa-copy"></i> 複製
+                </button>
+
+                <button onclick="pasteToNextSlot(${dayNum}, '${nextSlotAfterBlock || ''}')" title="將複製內容貼到下一個時段 (若相同會自動合併)"
+                        class="sketch-btn bg-[#E5F6E9] hover:bg-[#C9EED2] px-2 py-1 text-xs">
+                  <i class="fa-solid fa-paste"></i> 貼上
+                </button>
+
+                <button onclick="deleteSlotBlock(${dayNum}, '${timeStr}', ${spanCount})" title="刪除此時段行程"
+                        class="sketch-btn bg-[#FFE6EA] hover:bg-[#FFCCD5] text-rose-700 px-2 py-1 text-xs">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </div>
+            </div>
+          `;
+
+          i += spanCount;
+        }
+      }
+
+      container.innerHTML = rowsHtml;
+    }
+
+    // ==================== 功能 6：日本交通 PASS 路線圖卡片渲染與上傳/放大/編輯 ====================
+    function renderPassCards() {
+      const grid = document.getElementById('pass-cards-grid');
+      grid.innerHTML = appState.passes.map((pass) => `
+        <div class="sketch-box-sm bg-[#FFFDF9] flex flex-col justify-between overflow-hidden">
+          <div>
+            <div class="relative group bg-gray-100 border-b-2 border-[#3B332B] h-44 overflow-hidden cursor-zoom-in"
+                 onclick="openLightbox('${pass.id}')">
+              <img src="${pass.imageUrl}" alt="${escapeHtml(pass.name)}"
+                   onerror="this.src='https://placehold.co/600x360/FFE6EA/3B332B?text=PASS+路線圖'"
+                   class="w-full h-full object-cover group-hover:scale-105 transition duration-200" />
+              <div class="absolute bottom-2 right-2 px-2 py-1 rounded-lg bg-[#3B332B]/80 text-white text-[11px] font-bold flex items-center gap-1">
+                <i class="fa-solid fa-magnifying-glass-plus"></i> 點擊放大路線圖
+              </div>
+            </div>
+
+            <div class="p-2 bg-[#F5EFE6] border-b border-[#3B332B] flex items-center justify-between gap-1 text-[11px]">
+              <label class="sketch-btn bg-white hover:bg-sky-50 px-2 py-1 cursor-pointer flex items-center gap-1 font-bold">
+                <i class="fa-solid fa-file-arrow-up text-sky-600"></i> 上傳圖 / PDF
+                <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf"
+                       onchange="handlePassFileUpload(event, '${pass.id}')" class="hidden" />
+              </label>
+              <button onclick="promptPassImageUrl('${pass.id}')" class="sketch-btn bg-white hover:bg-amber-50 px-2 py-1 font-bold">
+                <i class="fa-solid fa-link text-amber-600"></i> 貼上網址
+              </button>
+              <button onclick="deletePassCard('${pass.id}')" title="刪除此 PASS" class="sketch-btn bg-rose-100 hover:bg-rose-200 text-rose-700 px-2 py-1">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </div>
+
+            <div class="p-3 space-y-2 text-xs">
+              <div>
+                <label class="text-[10px] font-bold text-gray-400">PASS 名稱 (可直接修改)</label>
+                <input type="text" value="${escapeHtml(pass.name)}"
+                       onchange="updatePassField('${pass.id}', 'name', this.value)"
+                       class="w-full font-black text-sm text-[#3B332B] bg-white border border-gray-300 focus:border-[#3B332B] rounded px-1.5 py-0.5" />
+              </div>
+
+              <div>
+                <label class="text-[10px] font-bold text-amber-700"><i class="fa-solid fa-yen-sign mr-0.5"></i>收費價格</label>
+                <input type="text" value="${escapeHtml(pass.price)}"
+                       onchange="updatePassField('${pass.id}', 'price', this.value)"
+                       class="w-full font-bold text-[#8A1538] bg-[#FFF4CC]/60 border border-gray-300 focus:border-[#3B332B] rounded px-1.5 py-0.5" />
+              </div>
+
+              <div>
+                <label class="text-[10px] font-bold text-emerald-700"><i class="fa-solid fa-circle-check mr-0.5"></i>適用範圍</label>
+                <textarea rows="2" onchange="updatePassField('${pass.id}', 'valid', this.value)"
+                          class="w-full text-[11px] bg-[#E5F6E9]/50 border border-gray-300 focus:border-[#3B332B] rounded p-1.5 leading-snug">${escapeHtml(pass.valid)}</textarea>
+              </div>
+
+              <div>
+                <label class="text-[10px] font-bold text-rose-700"><i class="fa-solid fa-circle-xmark mr-0.5"></i>不適用範圍</label>
+                <textarea rows="2" onchange="updatePassField('${pass.id}', 'invalid', this.value)"
+                          class="w-full text-[11px] bg-[#FFE6EA]/50 border border-gray-300 focus:border-[#3B332B] rounded p-1.5 leading-snug">${escapeHtml(pass.invalid)}</textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // ==================== 互動事件處理函式 ====================
+    window.updateTripMeta = function () {
+      appState.title = document.getElementById('trip-title').value || '未命名行程';
+      appState.adults = Math.max(1, Number(document.getElementById('trip-adults').value) || 1);
+      appState.children = Math.max(0, Number(document.getElementById('trip-children').value) || 0);
+      renderAll();
+      autoSaveToLocal();
+    };
+
+    window.handleDateRangeChange = function () {
+      const s = document.getElementById('trip-start-date').value;
+      const e = document.getElementById('trip-end-date').value;
+      if (s) appState.startDate = s;
+      if (e && e >= appState.startDate) {
+        appState.endDate = e;
+      } else {
+        appState.endDate = appState.startDate;
+      }
+      renderAll();
+      autoSaveToLocal();
+    };
+
+    window.handleTimeSettingsChange = function () {
+      appState.startTime = document.getElementById('trip-start-time').value || '00:00';
+      appState.endTime = document.getElementById('trip-end-time').value || '23:59';
+      appState.interval = Number(document.getElementById('trip-interval').value) || 30;
+      renderSchedule();
+      renderBudgets();
+      autoSaveToLocal();
+    };
+
+    window.updateRates = function () {
+      appState.rates.JPY = parseFloat(document.getElementById('rate-JPY').value) || 0.052;
+      appState.rates.CNY = parseFloat(document.getElementById('rate-CNY').value) || 1.08;
+      appState.rates.updatedDate = new Date().toISOString().split('T')[0];
+      renderAll();
+      autoSaveToLocal();
+      showToast('已更新匯率並重新計算所有港幣總額！', 'success');
+    };
+
+    window.fetchLiveRates = async function () {
+      try {
+        showToast('正在取得最新參考匯率...', 'info');
+        const res = await fetch('https://open.er-api.com/v6/latest/HKD');
+        const data = await res.json();
+        if (data && data.rates) {
+          appState.rates.JPY = Number((1 / data.rates.JPY).toFixed(4));
+          appState.rates.CNY = Number((1 / data.rates.CNY).toFixed(3));
+          appState.rates.updatedDate = new Date().toISOString().split('T')[0];
+          renderAll();
+          autoSaveToLocal();
+          showToast(`匯率已更新！1 JPY = ${appState.rates.JPY} HKD, 1 CNY = ${appState.rates.CNY} HKD`, 'success');
+        }
+      } catch (e) {
+        showToast('目前無法連線匯率伺服器，您可直接手動輸入當日匯率。', 'warn');
+      }
+    };
+
+    window.selectActiveDay = function (day) {
+      appState.activeDay = day;
+      renderDayTabs();
+      renderSchedule();
+      renderBudgets();
+    };
+
+    // ==================== 功能 2：新增方格、特別 PASS、Excel 下載與上傳去重 ====================
+    window.handleCreateCard = function (e) {
+      e.preventDefault();
+      const areaVal = document.getElementById('card-area').value.trim();
+      const titleVal = document.getElementById('card-title').value.trim();
+      const addressVal = document.getElementById('card-address').value.trim();
+      const noteVal = document.getElementById('card-note').value.trim();
+      const currencyVal = document.getElementById('card-currency').value;
+
+      const newCard = {
+        id: 'card_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+        category: document.getElementById('card-category').value,
+        area: areaVal,
+        title: titleVal,
+        adultPrice: Number(document.getElementById('card-adult-price').value) || 0,
+        childPrice: Number(document.getElementById('card-child-price').value) || 0,
+        currency: currencyVal,
+        address: addressVal
+      };
+      appState.cards.unshift(newCard);
+
+      if (noteVal) {
+        const noteCard = {
+          id: 'card_note_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+          category: '其他',
+          area: areaVal,
+          title: `📝 備註：${noteVal} (${titleVal})`,
+          adultPrice: 0,
+          childPrice: 0,
+          currency: currencyVal,
+          address: addressVal
+        };
+        appState.cards.unshift(noteCard);
+      }
+
+      document.getElementById('card-title').value = '';
+      document.getElementById('card-address').value = '';
+      document.getElementById('card-note').value = '';
+      renderCardPool();
+      autoSaveToLocal();
+      showToast(noteVal
+        ? `已生成「${newCard.title}」及獨立備註方格，可拖拉至右側時間表！`
+        : `已生成「${newCard.title}」方格，可拖拉至右側時間表！`, 'success');
+    };
+
+    window.promptSpecialPass = function (defaultName, defaultPrice) {
+      const areaInput = document.getElementById('card-area');
+      const catInput = document.getElementById('card-category');
+      const titleInput = document.getElementById('card-title');
+      const adultInput = document.getElementById('card-adult-price');
+      const childInput = document.getElementById('card-child-price');
+      const curInput = document.getElementById('card-currency');
+
+      catInput.value = '交通';
+      areaInput.value = '東京交通券';
+      titleInput.value = defaultName;
+      adultInput.value = defaultPrice;
+      childInput.value = Math.round(defaultPrice / 2);
+      curInput.value = 'JPY';
+      titleInput.focus();
+      showToast(`已帶入「${defaultName}」資料，請確認費用後按「生成方格」！`, 'info');
+    };
+
+    window.setPoolFilter = function (cat) {
+      appState.poolFilter = cat;
+      document.querySelectorAll('.pool-filter-btn').forEach(btn => {
+        if (btn.dataset.filter === cat) {
+          btn.classList.add('bg-[#3B332B]', 'text-white');
+        } else {
+          btn.classList.remove('bg-[#3B332B]', 'text-white');
+        }
+      });
+      renderCardPool();
+    };
+
+    window.deletePoolCard = function (cardId) {
+      appState.cards = appState.cards.filter(c => c.id !== cardId);
+      renderCardPool();
+      autoSaveToLocal();
+    };
+
+    window.updateCardTitleSync = function (cardId, newTitle) {
+      const trimmed = newTitle.trim();
+      if (!trimmed) return;
+      const card = appState.cards.find(c => c.id === cardId);
+      if (card) card.title = trimmed;
+
+      Object.values(appState.schedule || {}).forEach(dayObj => {
+        Object.values(dayObj || {}).forEach(slot => {
+          if (slot && slot.cardId === cardId) {
+            slot.title = trimmed;
+          }
+        });
+      });
+      renderSchedule();
+      autoSaveToLocal();
+    };
+
+    window.updateSlotTitleSync = function (day, timeStr, spanCount, newTitle) {
+      const trimmed = newTitle.trim();
+      if (!trimmed) return;
+      const slots = generateTimeSlots();
+      const startIdx = slots.indexOf(timeStr);
+      const daySchedule = appState.schedule[day] || {};
+      let targetCardId = null;
+
+      for (let k = 0; k < spanCount; k++) {
+        const s = slots[startIdx + k];
+        if (s && daySchedule[s]) {
+          daySchedule[s].title = trimmed;
+          targetCardId = daySchedule[s].cardId;
+        }
+      }
+
+      if (targetCardId) {
+        const card = appState.cards.find(c => c.id === targetCardId);
+        if (card) card.title = trimmed;
+      }
+      renderCardPool();
+      renderSchedule();
+      autoSaveToLocal();
+    };
+
+    window.downloadExcelDemo = function () {
+      if (!window.XLSX) {
+        showToast('Excel 元件尚未載入完成，請稍候再試。', 'warn');
+        return;
+      }
+      const demoRows = [
+        { 類別: '交通', 地區: '成田機場', 項目名稱: 'N’EX 成田特快來回票', 大人單價: 5000, 小童單價: 2500, 幣別: 'JPY', 地址: '成田空港駅', 備註: '需於綠色窗口劃位' },
+        { 類別: '宿', 地區: '上野', 項目名稱: '上野三井花園飯店 (每晚)', 大人單價: 15000, 小童單價: 0, 幣別: 'JPY', 地址: '東京都台東区東上野3-19-7', 備註: '15:00 入住' },
+        { 類別: '景點', 地區: '河口湖', 項目名稱: '富士山全景纜車與遊覽船', 大人單價: 1600, 小童單價: 800, 幣別: 'JPY', 地址: '山梨県南都留郡富士河口湖町浅川1163-1', 備註: '' },
+        { 類別: '食', 地區: '築地', 項目名稱: '築地場外市場海鮮丼早餐', 大人單價: 2800, 小童單價: 1500, 幣別: 'JPY', 地址: '東京都中央区築地4-10-16', 備註: '建議 08:30 前抵達' },
+        { 類別: '購物', 地區: '銀座', 項目名稱: '銀座 LOFT & 伊東屋文具採購', 大人單價: 5000, 小童單價: 0, 幣別: 'JPY', 地址: '東京都中央区銀座2-4-6', 備註: '記得帶護照退稅' },
+        { 類別: '其他', 地區: '出發前', 項目名稱: '日本 5 日無限上網 eSIM', 大人單價: 88, 小童單價: 0, 幣別: 'HKD', 地址: '', 備註: '' }
+      ];
+      const ws = XLSX.utils.json_to_sheet(demoRows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, '行程方格範本');
+      XLSX.writeFile(wb, '旅手帳_行程匯入DEMO範本.xlsx');
+      showToast('已下載 Excel DEMO 範本！', 'success');
+    };
+
+    window.handleExcelUpload = function (event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const sheet = workbook.Sheets[workbook.SheetNames[0]];
+          const rows = XLSX.utils.sheet_to_json(sheet);
+
+          let addedCount = 0;
+          let dupCount = 0;
+
+          rows.forEach(r => {
+            const title = String(r['項目名稱'] || r['名稱'] || r['title'] || '').trim();
+            if (!title) return;
+            const category = String(r['類別'] || r['category'] || '景點').trim();
+            const area = String(r['地區'] || r['area'] || '').trim();
+            const adultPrice = Number(r['大人單價'] || r['大人'] || 0) || 0;
+            const childPrice = Number(r['小童單價'] || r['小童'] || 0) || 0;
+            const currency = String(r['幣別'] || r['貨幣'] || 'JPY').trim().toUpperCase();
+            const address = String(r['地址'] || r['地點'] || '').trim();
+            const note = String(r['備註'] || '').trim();
+
+            const exists = appState.cards.some(c => c.title === title && c.category === category);
+            if (exists) {
+              dupCount++;
+              return;
+            }
+
+            appState.cards.unshift({
+              id: 'card_xl_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+              category: ['食', '宿', '交通', '購物', '景點', '其他', 'PASS'].includes(category) ? category : '景點',
+              area,
+              title,
+              adultPrice,
+              childPrice,
+              currency: ['HKD', 'JPY', 'CNY'].includes(currency) ? currency : 'JPY',
+              address
+            });
+            addedCount++;
+
+            if (note) {
+              appState.cards.unshift({
+                id: 'card_xlnote_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+                category: '其他',
+                area,
+                title: `📝 備註：${note} (${title})`,
+                adultPrice: 0,
+                childPrice: 0,
+                currency: 'HKD',
+                address
+              });
+            }
+          });
+
+          renderCardPool();
+          autoSaveToLocal();
+          showToast(`Excel 匯入完成：新增 ${addedCount} 個方格${dupCount ? `（自動略過 ${dupCount} 個重複項目）` : ''}！`, 'success');
+        } catch (err) {
+          showToast('讀取 Excel 檔案失敗，請確認格式是否正確。', 'error');
+        }
+        event.target.value = '';
+      };
+      reader.readAsArrayBuffer(file);
+    };
+
+    // ==================== 拖拉排程、複製/貼上、一鍵整合重複方格 ====================
+    window.handleDragStartCard = function (e, cardId) {
+      draggedPayload = { type: 'POOL_CARD', cardId };
+      e.dataTransfer.effectAllowed = 'copyMove';
+    };
+
+    window.handleDragStartSlot = function (e, day, timeStr) {
+      draggedPayload = { type: 'SCHEDULE_SLOT', day, timeStr };
+      e.dataTransfer.effectAllowed = 'move';
+    };
+
+    window.handleDragOver = function (e) {
+      e.preventDefault();
+      e.currentTarget.classList.add('drop-zone-active');
+    };
+
+    window.handleDragLeave = function (e) {
+      e.currentTarget.classList.remove('drop-zone-active');
+    };
+
+    window.handleDropOnSlot = function (e, targetDay, targetTime) {
+      e.preventDefault();
+      e.currentTarget.classList.remove('drop-zone-active');
+      if (!draggedPayload) return;
+
+      if (!appState.schedule[targetDay]) appState.schedule[targetDay] = {};
+
+      if (draggedPayload.type === 'POOL_CARD') {
+        const card = appState.cards.find(c => c.id === draggedPayload.cardId);
+        if (!card) return;
+        appState.schedule[targetDay][targetTime] = {
+          cardId: card.id,
+          category: card.category,
+          area: card.area,
+          title: card.title,
+          adultPrice: card.adultPrice,
+          childPrice: card.childPrice,
+          currency: card.currency,
+          address: card.address,
+          actualAdult: null,
+          actualChild: null
+        };
+      } else if (draggedPayload.type === 'SCHEDULE_SLOT') {
+        const { day: srcDay, timeStr: srcTime } = draggedPayload;
+        if (srcDay === targetDay && srcTime === targetTime) return;
+        const srcItem = (appState.schedule[srcDay] || {})[srcTime];
+        if (!srcItem) return;
+        appState.schedule[targetDay][targetTime] = { ...srcItem };
+        delete appState.schedule[srcDay][srcTime];
+      }
+
+      draggedPayload = null;
+      renderAll();
+      autoSaveToLocal();
+    };
+
+    window.quickAssignCardToNextSlot = function (cardId) {
+      if (appState.activeDay === 'ALL') appState.activeDay = 1;
+      const dayNum = Number(appState.activeDay) || 1;
+      const slots = generateTimeSlots();
+      if (!appState.schedule[dayNum]) appState.schedule[dayNum] = {};
+
+      // 優先尋找 09:00 之後的第一個空位
+      const preferredStartIdx = Math.max(0, slots.findIndex(s => s >= '09:00'));
+      let targetSlot = slots.slice(preferredStartIdx).find(s => !appState.schedule[dayNum][s]);
+      if (!targetSlot) targetSlot = slots.find(s => !appState.schedule[dayNum][s]);
+
+      if (!targetSlot) {
+        showToast('當日時間表已全部排滿！', 'warn');
+        return;
+      }
+      const card = appState.cards.find(c => c.id === cardId);
+      if (!card) return;
+
+      appState.schedule[dayNum][targetSlot] = {
+        cardId: card.id,
+        category: card.category,
+        area: card.area,
+        title: card.title,
+        adultPrice: card.adultPrice,
+        childPrice: card.childPrice,
+        currency: card.currency,
+        address: card.address,
+        actualAdult: null,
+        actualChild: null
+      };
+      renderAll();
+      autoSaveToLocal();
+      showToast(`已排入 Day ${dayNum} 的 ${targetSlot}！`, 'success');
+    };
+
+    window.copySlotItem = function (day, timeStr) {
+      const item = (appState.schedule[day] || {})[timeStr];
+      if (!item) return;
+      clipboardSlot = JSON.parse(JSON.stringify(item));
+      renderSchedule();
+      showToast(`已複製「${item.title}」，可點擊下一格「貼上」延伸時段！`, 'info');
+    };
+
+    window.pasteClipboardToSlot = function (day, timeStr) {
+      if (!clipboardSlot) {
+        showToast('剪貼簿目前沒有已複製的行程方格！', 'warn');
+        return;
+      }
+      if (!appState.schedule[day]) appState.schedule[day] = {};
+      appState.schedule[day][timeStr] = JSON.parse(JSON.stringify(clipboardSlot));
+      renderAll();
+      autoSaveToLocal();
+    };
+
+    window.pasteToNextSlot = function (day, nextTimeStr) {
+      if (!clipboardSlot) {
+        showToast('請先點擊任一方格的「複製」按鈕！', 'warn');
+        return;
+      }
+      if (!nextTimeStr) {
+        showToast('已經是當日最後一個時段囉！', 'warn');
+        return;
+      }
+      pasteClipboardToSlot(day, nextTimeStr);
+      showToast(`已貼上至 ${nextTimeStr}（相同連續項目已自動合併且不重複計費）！`, 'success');
+    };
+
+    window.deleteSlotBlock = function (day, timeStr, spanCount) {
+      const slots = generateTimeSlots();
+      const idx = slots.indexOf(timeStr);
+      const daySchedule = appState.schedule[day] || {};
+      for (let k = 0; k < spanCount; k++) {
+        if (slots[idx + k]) delete daySchedule[slots[idx + k]];
+      }
+      renderAll();
+      autoSaveToLocal();
+    };
+
+    window.mergeCurrentDayDuplicates = function () {
+      const dayNum = Number(appState.activeDay);
+      if (!dayNum || !appState.schedule[dayNum]) return;
+      const slots = generateTimeSlots();
+      const daySchedule = appState.schedule[dayNum];
+
+      // 將同日分散但完全相同的項目緊湊整合至第一次出現的連續時段
+      const seenFirstIdx = new Map();
+      let mergedCount = 0;
+
+      for (let i = 0; i < slots.length; i++) {
+        const t = slots[i];
+        const it = daySchedule[t];
+        if (!it) continue;
+        const key = `${it.category}|${it.title}|${it.adultPrice}`;
+        if (!seenFirstIdx.has(key)) {
+          seenFirstIdx.set(key, i);
+        } else {
+          const prevSlot = i > 0 ? daySchedule[slots[i - 1]] : null;
+          if (!prevSlot || !isSameEvent(prevSlot, it)) {
+            // 移至該項目的尾端連續格
+            let targetIdx = seenFirstIdx.get(key);
+            while (targetIdx < slots.length && daySchedule[slots[targetIdx]] && isSameEvent(daySchedule[slots[targetIdx]], it)) {
+              targetIdx++;
+            }
+            if (targetIdx < slots.length && !daySchedule[slots[targetIdx]]) {
+              daySchedule[slots[targetIdx]] = { ...it };
+              delete daySchedule[t];
+              mergedCount++;
+            }
+          }
+        }
+      }
+      renderAll();
+      autoSaveToLocal();
+      showToast(mergedCount > 0 ? `已整合 ${mergedCount} 個重複方格並合併計費！` : '連續相同方格已自動整合！', 'success');
+    };
+
+    window.clearCurrentDaySchedule = function () {
+      const dayNum = Number(appState.activeDay);
+      if (!dayNum) return;
+      appState.schedule[dayNum] = {};
+      renderAll();
+      autoSaveToLocal();
+      showToast(`已清空 Day ${dayNum} 的時間表。`, 'info');
+    };
+
+    // ==================== 編輯時段方格與實際花費 Modal ====================
+    window.openSlotEditModal = function (day, timeStr) {
+      const item = (appState.schedule[day] || {})[timeStr];
+      if (!item) return;
+      document.getElementById('edit-slot-day').value = day;
+      document.getElementById('edit-slot-time').value = timeStr;
+      document.getElementById('edit-slot-category').value = item.category;
+      document.getElementById('edit-slot-area').value = item.area || '';
+      document.getElementById('edit-slot-currency').value = item.currency || 'JPY';
+      document.getElementById('edit-slot-title').value = item.title || '';
+      document.getElementById('edit-slot-address').value = item.address || '';
+      document.getElementById('edit-slot-adult-est').value = item.adultPrice ?? 0;
+      document.getElementById('edit-slot-child-est').value = item.childPrice ?? 0;
+      document.getElementById('edit-slot-adult-act').value = item.actualAdult ?? '';
+      document.getElementById('edit-slot-child-act').value = item.actualChild ?? '';
+      openModal('slot-edit-modal');
+    };
+
+    window.saveSlotEdit = function (e) {
+      e.preventDefault();
+      const day = Number(document.getElementById('edit-slot-day').value);
+      const timeStr = document.getElementById('edit-slot-time').value;
+      const daySchedule = appState.schedule[day] || {};
+      const origItem = daySchedule[timeStr];
+      if (!origItem) return;
+
+      const updatedFields = {
+        category: document.getElementById('edit-slot-category').value,
+        area: document.getElementById('edit-slot-area').value.trim(),
+        currency: document.getElementById('edit-slot-currency').value,
+        title: document.getElementById('edit-slot-title').value.trim(),
+        address: document.getElementById('edit-slot-address').value.trim(),
+        adultPrice: Number(document.getElementById('edit-slot-adult-est').value) || 0,
+        childPrice: Number(document.getElementById('edit-slot-child-est').value) || 0,
+        actualAdult: document.getElementById('edit-slot-adult-act').value === '' ? null : Number(document.getElementById('edit-slot-adult-act').value),
+        actualChild: document.getElementById('edit-slot-child-act').value === '' ? null : Number(document.getElementById('edit-slot-child-act').value)
+      };
+
+      // 同步更新連續合併區塊
+      const slots = generateTimeSlots();
+      const startIdx = slots.indexOf(timeStr);
+      let k = 0;
+      while (startIdx + k < slots.length && daySchedule[slots[startIdx + k]] && isSameEvent(origItem, daySchedule[slots[startIdx + k]])) {
+        Object.assign(daySchedule[slots[startIdx + k]], updatedFields);
+        k++;
+      }
+
+      // 同步回左側卡片庫
+      if (origItem.cardId) {
+        const card = appState.cards.find(c => c.id === origItem.cardId);
+        if (card) {
+          card.category = updatedFields.category;
+          card.area = updatedFields.area;
+          card.currency = updatedFields.currency;
+          card.title = updatedFields.title;
+          card.address = updatedFields.address;
+          card.adultPrice = updatedFields.adultPrice;
+          card.childPrice = updatedFields.childPrice;
+        }
+      }
+
+      closeModal('slot-edit-modal');
+      renderAll();
+      autoSaveToLocal();
+      showToast('已儲存修改並同步更新預算與實際花費！', 'success');
+    };
+
+    // ==================== 額外支出新增與刪除 ====================
+    window.handleAddExtraExpense = function (e) {
+      e.preventDefault();
+      const name = document.getElementById('extra-name').value.trim();
+      const amount = Number(document.getElementById('extra-amount').value) || 0;
+      const currency = document.getElementById('extra-currency').value;
+      if (!name) return;
+
+      appState.extraExpenses.push({
+        id: 'ex_' + Date.now(),
+        name,
+        amount,
+        currency
+      });
+      document.getElementById('extra-name').value = '';
+      document.getElementById('extra-amount').value = '';
+      renderAll();
+      autoSaveToLocal();
+      showToast(`已將「${name}」計入整個旅行真實總額！`, 'success');
+    };
+
+    window.deleteExtraExpense = function (id) {
+      appState.extraExpenses = appState.extraExpenses.filter(x => x.id !== id);
+      renderAll();
+      autoSaveToLocal();
+    };
+
+    // ==================== 功能 3：Google Maps 路線預覽與導航 ====================
+    window.openGoogleMapsRoute = function (origin, dest) {
+      document.getElementById('gmaps-origin').value = origin || '';
+      document.getElementById('gmaps-dest').value = dest || '';
+      refreshGmapsPreview();
+      openModal('gmaps-modal');
+    };
+
+    window.refreshGmapsPreview = function () {
+      const origin = document.getElementById('gmaps-origin').value.trim();
+      const dest = document.getElementById('gmaps-dest').value.trim();
+      const encOrigin = encodeURIComponent(origin || '東京駅');
+      const encDest = encodeURIComponent(dest || origin || '新宿駅');
+
+      const externalUrl = dest
+        ? `https://www.google.com/maps/dir/?api=1&origin=${encOrigin}&destination=${encDest}&travelmode=transit`
+        : `https://www.google.com/maps/search/?api=1&query=${encOrigin}`;
+
+      const embedUrl = dest
+        ? `https://maps.google.com/maps?saddr=${encOrigin}&daddr=${encDest}&dirflg=r&output=embed`
+        : `https://maps.google.com/maps?q=${encOrigin}&output=embed`;
+
+      document.getElementById('gmaps-external-link').href = externalUrl;
+      document.getElementById('gmaps-iframe').src = embedUrl;
+    };
+
+    // ==================== 功能 6：PASS 路線圖上傳 (JPEG/PNG/PDF)、網址與全螢幕放大 ====================
+    window.handlePassFileUpload = async function (event, passId) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const pass = appState.passes.find(p => p.id === passId);
+      if (!pass) return;
+
+      if (file.type === 'application/pdf') {
+        try {
+          showToast('正在將 PDF 第一頁轉換為高清路線圖...', 'info');
+          const arrayBuffer = await file.arrayBuffer();
+          const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+          const page = await pdf.getPage(1);
+          const viewport = page.getViewport({ scale: 2.0 });
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+          await page.render({ canvasContext: ctx, viewport }).promise;
+          pass.imageUrl = canvas.toDataURL('image/png');
+          renderPassCards();
+          autoSaveToLocal();
+          showToast('PDF 路線圖已成功匯入並取代縮圖！', 'success');
+        } catch (err) {
+          showToast('PDF 轉換失敗，請改上傳 PNG 或 JPEG 圖檔。', 'error');
+        }
+      } else {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          pass.imageUrl = e.target.result;
+          renderPassCards();
+          autoSaveToLocal();
+          showToast('路線圖已成功更新！點擊圖片可全螢幕放大。', 'success');
+        };
+        reader.readAsDataURL(file);
+      }
+      event.target.value = '';
+    };
+
+    window.promptPassImageUrl = function (passId) {
+      const pass = appState.passes.find(p => p.id === passId);
+      if (!pass) return;
+      const url = window.prompt('請貼上路線圖的圖片網址 (https://...)：', pass.imageUrl.startsWith('http') ? pass.imageUrl : '');
+      if (url && url.trim()) {
+        pass.imageUrl = url.trim();
+        renderPassCards();
+        autoSaveToLocal();
+        showToast('已更新 PASS 路線圖網址！', 'success');
+      }
+    };
+
+    window.updatePassField = function (passId, field, val) {
+      const pass = appState.passes.find(p => p.id === passId);
+      if (pass) {
+        pass[field] = val;
+        autoSaveToLocal();
+      }
+    };
+
+    window.addNewPassCard = function () {
+      appState.passes.push({
+        id: 'pass_custom_' + Date.now(),
+        name: '自訂交通 PASS / 周遊券',
+        price: '大人 2,000 日圓 / 小童 1,000 日圓',
+        valid: '請輸入適用路線與有效期限',
+        invalid: '請輸入不適用列車或限制說明',
+        imageUrl: createPassIllustrationSVG('自訂交通周遊券', '點擊上傳官方路線圖', '#FFF4CC', '#FFD97D', [
+          { color: '#FF9EAA', label: '路線 A：請上傳 JPEG / PNG / PDF 路線圖' },
+          { color: '#7CC6FE', label: '路線 B：可直接編輯下方票價與適用範圍' }
+        ])
+      });
+      renderPassCards();
+      autoSaveToLocal();
+      showToast('已新增一張自訂 PASS 卡片！', 'success');
+    };
+
+    window.deletePassCard = function (passId) {
+      appState.passes = appState.passes.filter(p => p.id !== passId);
+      renderPassCards();
+      autoSaveToLocal();
+    };
+
+    window.openLightbox = function (passId) {
+      const pass = appState.passes.find(p => p.id === passId);
+      if (!pass) return;
+      lightboxScale = 1;
+      const img = document.getElementById('lightbox-img');
+      img.src = pass.imageUrl;
+      img.style.transform = 'scale(1)';
+      document.getElementById('lightbox-title').textContent = pass.name;
+      openModal('lightbox-modal');
+    };
+
+    window.zoomLightbox = function (delta) {
+      lightboxScale = Math.min(3, Math.max(0.5, lightboxScale + delta));
+      document.getElementById('lightbox-img').style.transform = `scale(${lightboxScale})`;
+    };
+
+    window.resetLightboxZoom = function () {
+      lightboxScale = 1;
+      document.getElementById('lightbox-img').style.transform = 'scale(1)';
+    };
+
+    // ==================== 功能 5：輸出 PDF / 列印 (模式 A 獨立每一天橫向 & 模式 B 單頁總覽含時間與地點) ====================
+    window.openPrintModal = function () {
+      openModal('print-modal');
+    };
+
+    window.executePrint = function (mode) {
+      closeModal('print-modal');
+      const printArea = document.getElementById('print-area');
+      const styleEl = document.getElementById('dynamic-print-style');
+      const days = getTripDays();
+      const slots = generateTimeSlots();
+      const stats = calculateAllBudgets();
+
+      if (mode === 'daily-landscape') {
+        // 模式 A：獨立每一天 (橫向 A4)
+        styleEl.textContent = `@media print { @page { size: A4 landscape; margin: 9mm; } }`;
+
+        const pagesHtml = days.map((dObj, dIdx) => {
+          const daySchedule = appState.schedule[dObj.day] || {};
+          const dayStat = stats.dailySummaries.find(s => s.day === dObj.day) || { estHKD: 0, actHKD: 0 };
+          const rows = [];
+
+          let i = 0;
+          while (i < slots.length) {
+            const t = slots[i];
+            const it = daySchedule[t];
+            if (!it) {
+              i++;
+              continue;
+            }
+            let span = 1;
+            while (i + span < slots.length && isSameEvent(it, daySchedule[slots[i + span]])) {
+              span++;
+            }
+            const endT = (i + span < slots.length) ? slots[i + span] : '結束';
+            const estOrig = (Number(it.adultPrice) || 0) * appState.adults + (Number(it.childPrice) || 0) * appState.children;
+            const actA = (it.actualAdult !== null && it.actualAdult !== undefined && it.actualAdult !== '') ? Number(it.actualAdult) : Number(it.adultPrice);
+            const actC = (it.actualChild !== null && it.actualChild !== undefined && it.actualChild !== '') ? Number(it.actualChild) : Number(it.childPrice);
+            const actOrig = actA * appState.adults + actC * appState.children;
+
+            rows.push(`
+              <tr>
+                <td style="border:1px solid #333;padding:5px 7px;font-weight:bold;white-space:nowrap;">${t} - ${endT}</td>
+                <td style="border:1px solid #333;padding:5px 7px;text-align:center;">${escapeHtml(it.category)}</td>
+                <td style="border:1px solid #333;padding:5px 7px;">${escapeHtml(it.area || '—')}</td>
+                <td style="border:1px solid #333;padding:5px 7px;font-weight:bold;">${escapeHtml(it.title)}</td>
+                <td style="border:1px solid #333;padding:5px 7px;font-size:11px;">${escapeHtml(it.address || '—')}</td>
+                <td style="border:1px solid #333;padding:5px 7px;text-align:right;">${it.currency} ${formatMoney(estOrig)}</td>
+                <td style="border:1px solid #333;padding:5px 7px;text-align:right;">${it.currency} ${formatMoney(actOrig)}</td>
+              </tr>
+            `);
+            i += span;
+          }
+
+          return `
+            <div class="${dIdx < days.length - 1 ? 'print-page-break' : ''}" style="font-family:'Noto Sans TC',sans-serif;">
+              <div style="border-bottom:2px solid #333;padding-bottom:6px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:flex-end;">
+                <div>
+                  <h1 style="font-size:18px;font-weight:900;margin:0;">${escapeHtml(appState.title)} — Day ${dObj.day} (${dObj.dateStr} 週${dObj.weekday})</h1>
+                  <div style="font-size:11px;margin-top:2px;">同行人數：大人 ${appState.adults} 位、小童 ${appState.children} 位</div>
+                </div>
+                <div style="text-align:right;font-size:11px;font-weight:bold;">
+                  <div>當日預計花費：HK$ ${formatMoney(dayStat.estHKD)}</div>
+                  <div>當日實際花費：HK$ ${formatMoney(dayStat.actHKD)}</div>
+                </div>
+              </div>
+              <table style="width:100%;border-collapse:collapse;font-size:12px;">
+                <thead>
+                  <tr style="background:#E3F3FF;">
+                    <th style="border:1px solid #333;padding:6px;width:105px;">時間</th>
+                    <th style="border:1px solid #333;padding:6px;width:55px;">類別</th>
+                    <th style="border:1px solid #333;padding:6px;width:90px;">地區</th>
+                    <th style="border:1px solid #333;padding:6px;">行程內容</th>
+                    <th style="border:1px solid #333;padding:6px;width:190px;">地點 / 地址</th>
+                    <th style="border:1px solid #333;padding:6px;width:95px;">預計金額</th>
+                    <th style="border:1px solid #333;padding:6px;width:95px;">實際金額</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${rows.length ? rows.join('') : '<tr><td colspan="7" style="border:1px solid #333;padding:14px;text-align:center;color:#888;">本日尚未排定行程</td></tr>'}
+                </tbody>
+              </table>
+            </div>
+          `;
+        }).join('');
+
+        printArea.innerHTML = pagesHtml;
+      } else {
+        // 模式 B：單頁行程精簡總覽 (清晰列出當日住宿，以及實際行程的時間、名稱與地點/地址)
+        styleEl.textContent = `@media print { @page { size: A4 portrait; margin: 9mm; } }`;
+
+        const summaryRows = days.map(dObj => {
+          const daySchedule = appState.schedule[dObj.day] || {};
+          const hotels = new Map();
+          const itineraryItems = [];
+
+          let i = 0;
+          while (i < slots.length) {
+            const t = slots[i];
+            const it = daySchedule[t];
+            if (!it) {
+              i++;
+              continue;
+            }
+
+            // 合併連續相同時段以取得完整起訖時間
+            let span = 1;
+            while (i + span < slots.length && isSameEvent(it, daySchedule[slots[i + span]])) {
+              span++;
+            }
+            const endT = (i + span < slots.length) ? slots[i + span] : '';
+            const timeLabel = endT ? `${t}-${endT}` : `${t}`;
+
+            // 組合地點資訊（地區 + 詳細地址）
+            const locationParts = [];
+            if (it.area && it.area.trim()) locationParts.push(it.area.trim());
+            if (it.address && it.address.trim() && it.address.trim() !== it.area?.trim()) {
+              locationParts.push(it.address.trim());
+            }
+            const locationText = locationParts.join('・');
+
+            if (it.category === '宿') {
+              if (!hotels.has(it.title)) {
+                hotels.set(it.title, locationText);
+              }
+            } else {
+              // 實際行程：顯示時間、行程名稱（景點/購物/食/交通/其他）與地點/地址
+              const catBadge = it.category === '交通' || it.category === 'PASS' ? `[${it.category}]` : '✿';
+              itineraryItems.push(`
+                <div style="margin-bottom:3px;line-height:1.35;border-bottom:1px dashed #E5E7EB;padding-bottom:2px;">
+                  <span style="display:inline-block;font-weight:900;color:#084C7F;background:#F0F7FF;border:1px solid #BCD7F5;border-radius:4px;padding:0 4px;font-size:10.5px;margin-right:4px;">${timeLabel}</span>
+                  <span style="font-weight:700;color:#222;">${catBadge} ${escapeHtml(it.title)}</span>
+                  ${locationText ? `<span style="color:#555;font-size:10.5px;margin-left:4px;">📍${escapeHtml(locationText)}</span>` : ''}
+                </div>
+              `);
+            }
+
+            i += span;
+          }
+
+          const hotelHtml = hotels.size
+            ? Array.from(hotels.entries()).map(([hName, hLoc]) => `
+                <div style="margin-bottom:3px;line-height:1.35;">
+                  <div>🏨 ${escapeHtml(hName)}</div>
+                  ${hLoc ? `<div style="font-size:10px;font-weight:normal;color:#555;">📍${escapeHtml(hLoc)}</div>` : ''}
+                </div>
+              `).join('')
+            : '<span style="color:#999;">—</span>';
+
+          return `
+            <tr>
+              <td style="border:1px solid #333;padding:6px 7px;font-weight:bold;white-space:nowrap;background:#FFFDF7;vertical-align:top;">
+                <div style="font-size:12.5px;">Day ${dObj.day}</div>
+                <div style="font-size:10.5px;font-weight:normal;color:#444;">${dObj.dateStr} (週${dObj.weekday})</div>
+              </td>
+              <td style="border:1px solid #333;padding:6px 7px;font-weight:bold;color:#3D1E6D;vertical-align:top;">
+                ${hotelHtml}
+              </td>
+              <td style="border:1px solid #333;padding:6px 7px;vertical-align:top;">
+                ${itineraryItems.length ? itineraryItems.join('') : '<span style="color:#999;">—</span>'}
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+        printArea.innerHTML = `
+          <div style="font-family:'Noto Sans TC',sans-serif;">
+            <div style="border-bottom:2px solid #333;padding-bottom:6px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:flex-end;">
+              <div>
+                <h1 style="font-size:18px;font-weight:900;margin:0;">${escapeHtml(appState.title)} — 行程精簡總覽表</h1>
+                <div style="font-size:11px;margin-top:2px;">日期：${appState.startDate} 至 ${appState.endDate}（大人 ${appState.adults} 位、小童 ${appState.children} 位）</div>
+              </div>
+              <div style="text-align:right;font-size:11px;font-weight:bold;">
+                <div>旅行預算總金額：HK$ ${formatMoney(stats.totalBudgetHKD)}</div>
+                <div>旅行真實總金額：HK$ ${formatMoney(stats.totalActualHKD)}</div>
+              </div>
+            </div>
+
+            <table style="width:100%;border-collapse:collapse;font-size:11.5px;">
+              <thead>
+                <tr style="background:#FFE6EA;">
+                  <th style="border:1px solid #333;padding:6px;width:105px;">日期</th>
+                  <th style="border:1px solid #333;padding:6px;width:175px;">當日住宿</th>
+                  <th style="border:1px solid #333;padding:6px;">實際行程（時間・名稱・地點/地址）</th>
+                </tr>
+              </thead>
+              <tbody>${summaryRows}</tbody>
+            </table>
+          </div>
+        `;
+      }
+
+      setTimeout(() => {
+        window.print();
+      }, 150);
+    };
+
+    // ==================== 功能 5：儲存行程、開新記錄、翻閱歷史記錄 (Firebase + IndexedDB) ====================
+    async function autoSaveToLocal() {
+      await idbSet('current_active_trip', appState);
+    }
+
+    window.saveCurrentTrip = async function () {
+      const recordKey = `trips/${appState.tripId}`;
+      const summaryMeta = {
+        tripId: appState.tripId,
+        title: appState.title,
+        startDate: appState.startDate,
+        endDate: appState.endDate,
+        adults: appState.adults,
+        children: appState.children,
+        savedAt: new Date().toLocaleString('zh-HK')
+      };
+
+      await saveData(recordKey, appState);
+
+      let indexList = (await loadData('trips_index')) || [];
+      if (!Array.isArray(indexList)) indexList = Object.values(indexList);
+      const existingIdx = indexList.findIndex(x => x.tripId === appState.tripId);
+      if (existingIdx >= 0) {
+        indexList[existingIdx] = summaryMeta;
+      } else {
+        indexList.unshift(summaryMeta);
+      }
+      await saveData('trips_index', indexList);
+      await autoSaveToLocal();
+      refreshHistoryCount();
+      showToast(`行程「${appState.title}」已儲存至雲端與 IndexedDB！`, 'success');
+    };
+
+    window.createNewTrip = async function () {
+      const newStart = new Date().toISOString().split('T')[0];
+      const newEnd = new Date(Date.now() + 2 * 86400000).toISOString().split('T')[0];
+      appState = {
+        tripId: 'trip_' + Date.now(),
+        title: '全新旅行規劃手帳',
+        startDate: newStart,
+        endDate: newEnd,
+        adults: 2,
+        children: 0,
+        startTime: '00:00',
+        endTime: '23:59',
+        interval: 30,
+        rates: { HKD: 1, JPY: appState.rates.JPY, CNY: appState.rates.CNY, updatedDate: newStart },
+        activeDay: 1,
+        poolFilter: 'ALL',
+        cards: [],
+        schedule: { 1: {} },
+        extraExpenses: [],
+        passes: appState.passes
+      };
+      renderAll();
+      await autoSaveToLocal();
+      showToast('已開啟全新空白行程記錄！', 'success');
+    };
+
+    async function refreshHistoryCount() {
+      let indexList = (await idbGet('trips_index')) || [];
+      if (!Array.isArray(indexList)) indexList = Object.values(indexList);
+      document.getElementById('history-count').textContent = indexList.length;
+    }
+
+    window.openHistoryModal = async function () {
+      openModal('history-modal');
+      const container = document.getElementById('history-list-container');
+      container.innerHTML = `<div class="text-center py-6 text-xs text-gray-500"><i class="fa-solid fa-spinner fa-spin mr-1"></i>正在從 Firebase 與 IndexedDB 載入記錄...</div>`;
+
+      let indexList = (await loadData('trips_index')) || [];
+      if (!Array.isArray(indexList)) indexList = Object.values(indexList);
+
+      if (indexList.length === 0) {
+        container.innerHTML = `<div class="text-center py-8 text-xs text-gray-400 font-bold">目前尚無已儲存的歷史記錄，請先點擊上方「儲存行程」！</div>`;
+        return;
+      }
+
+      container.innerHTML = indexList.map(item => `
+        <div class="sketch-box-sm p-3 bg-[#FFFDF7] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <div class="font-black text-sm text-[#3B332B]">
+              ${escapeHtml(item.title)}
+              ${item.tripId === appState.tripId ? '<span class="ml-1 px-2 py-0.5 text-[10px] rounded-full bg-[#88C999] border border-[#3B332B]">目前開啟中</span>' : ''}
+            </div>
+            <div class="text-xs text-gray-600 mt-0.5">
+              📅 ${item.startDate} ~ ${item.endDate} ｜ 👥 大人 ${item.adults}、小童 ${item.children} ｜ 🕒 儲存於 ${item.savedAt}
+            </div>
+          </div>
+          <div class="flex items-center gap-1.5 self-end sm:self-center">
+            <button onclick="loadHistoryTrip('${item.tripId}')" class="sketch-btn bg-[#7CC6FE] hover:bg-[#5EB8FD] px-3 py-1 text-xs">
+              <i class="fa-solid fa-folder-open mr-1"></i>載入此記錄
+            </button>
+            <button onclick="deleteHistoryTrip('${item.tripId}')" class="sketch-btn bg-[#FFE6EA] hover:bg-[#FFCCD5] text-rose-700 px-2.5 py-1 text-xs">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+        </div>
+      `).join('');
+    };
+
+    window.loadHistoryTrip = async function (tripId) {
+      const loaded = await loadData(`trips/${tripId}`);
+      if (!loaded) {
+        showToast('找不到該行程資料，可能已被刪除。', 'error');
+        return;
+      }
+      appState = {
+        ...loaded,
+        cards: loaded.cards || [],
+        schedule: loaded.schedule || { 1: {} },
+        extraExpenses: loaded.extraExpenses || [],
+        passes: loaded.passes || JSON.parse(JSON.stringify(DEFAULT_PASSES))
+      };
+      await autoSaveToLocal();
+      closeModal('history-modal');
+      renderAll();
+      showToast(`已成功載入行程「${appState.title}」！`, 'success');
+    };
+
+    window.deleteHistoryTrip = async function (tripId) {
+      await removeData(`trips/${tripId}`);
+      let indexList = (await loadData('trips_index')) || [];
+      if (!Array.isArray(indexList)) indexList = Object.values(indexList);
+      indexList = indexList.filter(x => x.tripId !== tripId);
+      await saveData('trips_index', indexList);
+      openHistoryModal();
+      refreshHistoryCount();
+      showToast('已刪除該歷史行程記錄', 'info');
+    };
+
+    // ==================== 通用 Modal 與字串安全工具 ====================
+    window.openModal = function (id) {
+      const el = document.getElementById(id);
+      if (el) {
+        el.classList.remove('hidden');
+        el.classList.add('flex');
+      }
+    };
+
+    window.closeModal = function (id) {
+      const el = document.getElementById(id);
+      if (el) {
+        el.classList.add('hidden');
+        el.classList.remove('flex');
+      }
+    };
+
+    function escapeHtml(str) {
+      return String(str ?? '')
+        .replace(/&/g, '&')
+        .replace(/</g, '<')
+        .replace(/>/g, '>')
+        .replace(/"/g, '"');
+    }
+
+    function escapeJs(str) {
+      return String(str ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    }
+
+    // ==================== 初始化啟動 ====================
+    async function initApp() {
+      try {
+        const cached = await idbGet('current_active_trip');
+        if (cached && cached.tripId) {
+          appState = {
+            ...appState,
+            ...cached,
+            cards: cached.cards || appState.cards,
+            schedule: cached.schedule || appState.schedule,
+            extraExpenses: cached.extraExpenses || [],
+            passes: cached.passes || appState.passes
+          };
+        }
+      } catch (e) {
+        console.warn('讀取 IndexedDB 初始快取失敗:', e);
+      }
+      renderAll();
+    }
+
+    initApp();
+  </script>
+</body>
+</html>
